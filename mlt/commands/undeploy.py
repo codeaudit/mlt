@@ -26,7 +26,8 @@ import sys
 from termcolor import colored
 
 from mlt.commands import Command
-from mlt.utils import config_helpers, process_helpers, files, sync_helpers
+from mlt.utils import config_helpers, process_helpers, files,\
+    sync_helpers, undeploy_helpers
 
 
 class UndeployCommand(Command):
@@ -43,15 +44,35 @@ class UndeployCommand(Command):
             sys.exit(1)
 
         namespace = self.config['namespace']
+        app_name = self.config['name']
 
         if files.is_custom('undeploy:'):
             self._custom_undeploy()
         else:
-            # don't delete namespace here because we could be using a
-            # user-provided namespace
-            process_helpers.run(
-                ["kubectl", "--namespace", namespace, "delete", "-f", "k8s"],
-                raise_on_failure=True)
+            app_run_ids = undeploy_helpers.get_app_run_ids()
+            if app_run_ids < 2:
+                job_name = "-".join([app_name, app_run_ids[0]])
+                self._undeploy_job(namespace, app_run_ids[0])
+            # Call the specified sub-command
+            elif self.args.get('--all'):
+                self._undeploy_all(namespace, app_name, app_run_ids)
+            elif self.args.get('--job-name'):
+                job_name = self.args('--job-name')
+                self._undeploy_job(namespace, job_name)
+            else:
+                print("This app has not been deployed yet.")
+                sys.exit(1)
+
+    def _undeploy_all(self, namespace, app_name, app_run_ids):
+        for app_run_id in app_run_ids:
+            job_name = "-".join([app_name, app_run_id])
+            self._undeploy_job(namespace, job_name)
+
+    def _undeploy_job(self, namespace, job_name):
+        job_dir = "k8s/{}".format(job_name)
+        process_helpers.run(
+            ["kubectl", "--namespace", namespace, "delete", "-f", job_dir],
+            raise_on_failure=True)
 
     def _custom_undeploy(self):
         """

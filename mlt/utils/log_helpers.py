@@ -30,7 +30,7 @@ from mlt.utils import process_helpers
 
 def call_logs(config, args):
     """
-    This method will check for `.push.josn`
+    This method will check for `.push.json`
     and provides run-id to _get_logs method to
     fetch logs.
     """

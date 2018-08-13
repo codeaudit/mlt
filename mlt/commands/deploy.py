@@ -230,14 +230,17 @@ class DeployCommand(Command):
         except CalledProcessError as e:
             print("Error while deploying app: {}".format(e.output))
 
-    def _apply_template(self, out, filename):
+    def _apply_template(self, out, filename, app_name, app_run_id):
         """take k8s-template data and create deployment in k8s dir"""
-        with open(os.path.join('k8s', filename), 'w') as f:
+        job_name = "-".join([app_name, app_run_id])
+        job_path = 'k8s/{}'.format(job_name)
+        with open(os.path.join(job_path,
+                               filename), 'w') as f:
             f.write(out)
 
         process_helpers.run(
             ["kubectl", "--namespace", self.namespace,
-             "apply", "-R", "-f", "k8s"])
+             "apply", "-R", "-f", job_path])
 
     def _get_most_recent_podname(self):
         """don't know of a better way to do this; grab the pod
