@@ -26,8 +26,7 @@ import sys
 from termcolor import colored
 
 from mlt.commands import Command
-from mlt.utils import config_helpers, process_helpers, files,\
-    sync_helpers, undeploy_helpers
+from mlt.utils import config_helpers, process_helpers, files, sync_helpers
 
 
 class UndeployCommand(Command):
@@ -44,37 +43,46 @@ class UndeployCommand(Command):
             sys.exit(1)
 
         namespace = self.config['namespace']
-        app_name = self.config['name']
-
-        if files.is_custom('undeploy:'):
-            self._custom_undeploy()
-        else:
-            app_run_ids = undeploy_helpers.get_app_run_ids()
-            if app_run_ids < 2:
-                job_name = "-".join([app_name, app_run_ids[0]])
-                self._undeploy_job(namespace, app_run_ids[0])
-            # Call the specified sub-command
-            elif self.args.get('--all'):
-                self._undeploy_all(namespace, app_name, app_run_ids)
-            elif self.args.get('--job-name'):
-                job_name = self.args('--job-name')
-                self._undeploy_job(namespace, job_name)
-            else:
+        jobs_list = files.get_deployed_jobs()
+        if len(jobs_list) <= 1:
+            if not jobs_list:
                 print("This app has not been deployed yet.")
                 sys.exit(1)
+            else:
+                self._undeploy_job(namespace, jobs_list[0])
+        else:
+            # Call the specified sub-command
+            if self.args.get('--all'):
+                self._undeploy_all(namespace, jobs_list)
+            elif self.args.get('--job-name'):
+                job_name = self.args['--job-name']
+                if job_name in jobs_list:
+                    self._undeploy_job(namespace, job_name)
+                else:
+                    print("The job-name not found.")
+                    sys.exit(1)
+            else:
+                print("Multiple jobs are found under this application,"
+                      " please try `mlt undeploy -h` for the available"
+                      " optional commands.")
+                sys.exit(1)
 
-    def _undeploy_all(self, namespace, app_name, app_run_ids):
-        for app_run_id in app_run_ids:
-            job_name = "-".join([app_name, app_run_id])
-            self._undeploy_job(namespace, job_name)
+    def _undeploy_all(self, namespace, jobs_list):
+        for job in jobs_list:
+            self._undeploy_job(namespace, job)
 
     def _undeploy_job(self, namespace, job_name):
         job_dir = "k8s/{}".format(job_name)
-        process_helpers.run(
-            ["kubectl", "--namespace", namespace, "delete", "-f", job_dir],
-            raise_on_failure=True)
+        if files.is_custom('undeploy:'):
+            self._custom_undeploy(job_name)
+        else:
+            process_helpers.run(
+                ["kubectl", "--namespace", namespace, "delete", "-f",
+                 job_dir],
+                raise_on_failure=True)
+        files.remove_job_dir(job_dir)
 
-    def _custom_undeploy(self):
+    def _custom_undeploy(self, job_name):
         """
         Custom undeploy uses the make targets to perform operation.
         """
@@ -92,7 +100,6 @@ class UndeployCommand(Command):
                   "please delete folder and re-initiate app")
             sys.exit(1)
 
-        job_name = "-".join([self.config['name'], app_run_id])
         # Adding USER env because
         # https://github.com/ksonnet/ksonnet/issues/298
         user_env = dict(os.environ, JOB_NAME=job_name, USER='root')

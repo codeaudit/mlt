@@ -195,7 +195,7 @@ class DeployCommand(Command):
                 if self.args["--interactive"]:
                     # every pod will be made to `sleep infinity & wait`
                     out = self._patch_template_spec(out)
-                self._apply_template(out, filename)
+                self._apply_template(out, filename, app_name, app_run_id)
 
     def _ensure_correct_data_types(self, template_json):
         """Due to us editing the yaml now in init.py as well, we have some
@@ -227,20 +227,28 @@ class DeployCommand(Command):
                                   env=user_env,
                                   stderr=STDOUT)
             print(output.decode("utf-8").strip())
+            self._track_deployed_job(app_name, app_run_id)
         except CalledProcessError as e:
             print("Error while deploying app: {}".format(e.output))
 
     def _apply_template(self, out, filename, app_name, app_run_id):
         """take k8s-template data and create deployment in k8s dir"""
-        job_name = "-".join([app_name, app_run_id])
-        job_path = 'k8s/{}'.format(job_name)
-        with open(os.path.join(job_path,
+        job_sub_dir = self._track_deployed_job(app_name, app_run_id)
+        with open(os.path.join(job_sub_dir,
                                filename), 'w') as f:
             f.write(out)
 
         process_helpers.run(
             ["kubectl", "--namespace", self.namespace,
-             "apply", "-R", "-f", job_path])
+             "apply", "-R", "-f", job_sub_dir])
+
+    def _track_deployed_job(self, app_name, app_run_id):
+        """create a subdirectory in k8s with the deployed job name."""
+        job_name = "-".join([app_name, app_run_id])
+        job_sub_dir = 'k8s/{}'.format(job_name)
+        if not os.path.exists(job_sub_dir):
+            os.makedirs(job_sub_dir)
+        return job_sub_dir
 
     def _get_most_recent_podname(self):
         """don't know of a better way to do this; grab the pod

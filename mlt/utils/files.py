@@ -20,6 +20,7 @@
 
 import json
 import os
+import shutil
 
 
 def fetch_action_arg(action, arg):
@@ -39,3 +40,13 @@ def is_custom(target):
                     custom = True
                     break
     return custom
+
+
+def get_deployed_jobs():
+    return [d for d in os.listdir('k8s')
+            if os.path.isdir(os.path.join('k8s', d))]
+
+
+def remove_job_dir(job_dir):
+    # remove the job sub-directory from k8s
+    shutil.rmtree(job_dir)

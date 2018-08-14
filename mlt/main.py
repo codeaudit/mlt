@@ -32,7 +32,7 @@ Usage:
       [--retries=<retries>] [--skip-crd-check]
       [--since=<duration>]
   mlt sync (create | reload | delete)
-  mlt undeploy
+  mlt undeploy [--all] [--job-name=<name>]
   mlt status
   mlt (template | templates) list [--template-repo=<repo>]
   mlt update-template [--template-repo=<repo>]
