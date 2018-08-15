@@ -245,10 +245,7 @@ class DeployCommand(Command):
     def _track_deployed_job(self, app_name, app_run_id):
         """create a subdirectory in k8s with the deployed job name."""
         job_name = "-".join([app_name, app_run_id])
-        job_sub_dir = 'k8s/{}'.format(job_name)
-        if not os.path.exists(job_sub_dir):
-            os.makedirs(job_sub_dir)
-        return job_sub_dir
+        return files.create_job_subdir(job_name)
 
     def _get_most_recent_podname(self):
         """don't know of a better way to do this; grab the pod

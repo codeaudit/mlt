@@ -49,7 +49,7 @@ class UndeployCommand(Command):
                 print("This app has not been deployed yet.")
                 sys.exit(1)
             else:
-                self._undeploy_job(namespace, jobs_list[0])
+                self._undeploy_job(namespace, jobs_list.pop())
         else:
             # Call the specified sub-command
             if self.args.get('--all'):
@@ -68,10 +68,12 @@ class UndeployCommand(Command):
                 sys.exit(1)
 
     def _undeploy_all(self, namespace, jobs_list):
+        """undeploy all jobs."""
         for job in jobs_list:
             self._undeploy_job(namespace, job)
 
     def _undeploy_job(self, namespace, job_name):
+        """undeploy the given job name"""
         job_dir = "k8s/{}".format(job_name)
         if files.is_custom('undeploy:'):
             self._custom_undeploy(job_name)
@@ -86,20 +88,6 @@ class UndeployCommand(Command):
         """
         Custom undeploy uses the make targets to perform operation.
         """
-        if os.path.exists('.push.json'):
-            with open('.push.json', 'r') as f:
-                data = json.load(f)
-        else:
-            print("This app has not been deployed yet.")
-            sys.exit(1)
-
-        app_run_id = data.get('app_run_id', "")
-
-        if len(app_run_id) < 4:
-            print("Something went wrong, "
-                  "please delete folder and re-initiate app")
-            sys.exit(1)
-
         # Adding USER env because
         # https://github.com/ksonnet/ksonnet/issues/298
         user_env = dict(os.environ, JOB_NAME=job_name, USER='root')
