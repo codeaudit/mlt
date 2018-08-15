@@ -31,11 +31,6 @@ def colored_mock(patch):
 
 
 @pytest.fixture
-def json_load_mock(patch):
-    return patch('json.load')
-
-
-@pytest.fixture
 def os_path_exists_mock(patch):
     return patch('os.path.exists')
 
@@ -68,7 +63,8 @@ def get_sync_spec_mock(patch):
 @pytest.fixture(autouse=True)
 def load_config_mock(patch):
     return patch('config_helpers.load_config',
-                 MagicMock(return_value={'name': 'foo', 'namespace': 'bar'}))
+                 MagicMock(return_value={'name': 'foo',
+                                         'namespace': 'bar'}))
 
 
 @pytest.fixture
@@ -91,7 +87,6 @@ def undeploy_fail(fail_text, command):
 
 def test_undeploy_custom(get_sync_spec_mock,
                          is_custom_mock,
-                         load_config_mock,
                          open_mock,
                          os_path_exists_mock,
                          subprocess_mock,
@@ -143,9 +138,9 @@ def test_undeploy_custom_multiple_jobs_deployed(
     command = {'undeploy': True}
     os_path_exists_mock.return_value = True
 
-    undeploy_fail("Multiple jobs are found under this application,"
-                  + " please try `mlt undeploy -h` for the available"
-                  + " optional commands.", command)
+    undeploy_fail("Multiple jobs are found under this application," +
+                  " please try `mlt undeploy -h` for the available" +
+                  " optional commands.", command)
 
 
 def test_undeploy_custom_by_job_name(
@@ -162,7 +157,6 @@ def test_undeploy_custom_by_job_name(
     is_custom_mock.return_value = True
     subprocess_mock.return_value = b"Successful Custom Undeploy"
     get_deployed_jobs_mock.return_value = {"job1", "job2"}
-    command = {'undeploy': True}
     os_path_exists_mock.return_value = True
     remove_job_dir_mock.input_value = 'k8s/job1'
     with catch_stdout() as output:
@@ -184,14 +178,13 @@ def test_undeploy_custom_all(
     is_custom_mock.return_value = True
     subprocess_mock.return_value = b"Successful Custom Undeploy"
     get_deployed_jobs_mock.return_value = {"job1", "job2"}
-    command = {'undeploy': True}
     os_path_exists_mock.return_value = True
     remove_job_dir_mock.input_value = 'k8s/job1'
     with catch_stdout() as output:
         UndeployCommand({'undeploy': True, '--all': True}).action()
-        assert not output.getvalue().strip() == \
-                   {"Successful Custom Undeploy",
-                    "Successful Custom Undeploy"}
+        assert not output.getvalue().strip() == {
+            "Successful Custom Undeploy",
+            "Successful Custom Undeploy"}
 
 
 def test_undeploy(load_config_mock,
@@ -205,10 +198,10 @@ def test_undeploy(load_config_mock,
     proc_helpers.run.assert_called_once()
 
 
-def test_undeploy_by_job_name(load_config_mock,
-                      proc_helpers,
-                      remove_job_dir_mock,
-                      get_deployed_jobs_mock):
+def test_undeploy_by_job_name(
+        proc_helpers,
+        remove_job_dir_mock,
+        get_deployed_jobs_mock):
     """tests `mlt undeploy --job-name` to undeploy a job."""
     remove_job_dir_mock.input_value = 'k8s/job1'
     get_deployed_jobs_mock.return_value = {"job1"}
@@ -216,9 +209,7 @@ def test_undeploy_by_job_name(load_config_mock,
     proc_helpers.run.assert_called_once()
 
 
-def test_undeploy_by_bad_job_name(load_config_mock,
-                                  proc_helpers,
-                                  remove_job_dir_mock,
+def test_undeploy_by_bad_job_name(remove_job_dir_mock,
                                   get_deployed_jobs_mock):
     """tests `mlt undeploy --job-name` with a non existing job name."""
     remove_job_dir_mock.input_value = 'k8s/job1'
@@ -228,10 +219,9 @@ def test_undeploy_by_bad_job_name(load_config_mock,
 
 
 def test_undeploy_synced(colored_mock,
-                         load_config_mock,
                          get_sync_spec_mock):
     """undeploying a synced job, we need to delete the sync first"""
     get_sync_spec_mock.return_value = 'hello-world'
     command = {'undeploy': True}
-    undeploy_fail("This app is currently being synced, please run "
+    undeploy_fail("This app is currently being synced, please run " +
                   "`mlt sync delete` to unsync first", command)
