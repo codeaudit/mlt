@@ -21,6 +21,7 @@
 import os
 import subprocess
 import sys
+import shutil
 
 from termcolor import colored
 
@@ -43,12 +44,9 @@ class UndeployCommand(Command):
 
         namespace = self.config['namespace']
         jobs_list = files.get_deployed_jobs()
-        if len(jobs_list) <= 1:
-            if not jobs_list:
-                print("This app has not been deployed yet.")
-                sys.exit(1)
-            else:
-                self._undeploy_job(namespace, jobs_list.pop())
+        if not jobs_list:
+            print("This app has not been deployed yet.")
+            sys.exit(1)
         else:
             # Call the specified sub-command
             if self.args.get('--all'):
@@ -58,12 +56,16 @@ class UndeployCommand(Command):
                 if job_name in jobs_list:
                     self._undeploy_job(namespace, job_name)
                 else:
-                    print("The job-name not found.")
+                    print('Job-name %s not found in:' % job_name)
+                    print(*jobs_list, sep='\n')
                     sys.exit(1)
+            elif len(jobs_list) == 1:
+                self._undeploy_job(namespace, jobs_list.pop())
             else:
                 print("Multiple jobs are found under this application,"
-                      " please try `mlt undeploy -h` for the available"
-                      " optional commands.")
+                      "please try `mlt undeploy --all` or specify a single"
+                      " job to undeploy using "
+                      "`mlt undeploy --job-name <job-name>`")
                 sys.exit(1)
 
     def _undeploy_all(self, namespace, jobs_list):
@@ -81,7 +83,11 @@ class UndeployCommand(Command):
                 ["kubectl", "--namespace", namespace, "delete", "-f",
                  job_dir],
                 raise_on_failure=True)
-        files.remove_job_dir(job_dir)
+        self.remove_job_dir(job_dir)
+
+    def remove_job_dir(self, job_dir):
+        """remove the job sub-directory from k8s."""
+        shutil.rmtree(job_dir)
 
     def _custom_undeploy(self, job_name):
         """

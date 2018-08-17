@@ -20,7 +20,6 @@
 
 import json
 import os
-import shutil
 
 
 def fetch_action_arg(action, arg):
@@ -46,16 +45,3 @@ def get_deployed_jobs():
     """get the list of the deployed jobs."""
     return [d for d in os.listdir('k8s')
             if os.path.isdir(os.path.join('k8s', d))]
-
-
-def create_job_subdir(job_name):
-    """create a sub-directory in k8s with the given job name."""
-    job_sub_dir = 'k8s/{}'.format(job_name)
-    if not os.path.exists(job_sub_dir):
-        os.makedirs(job_sub_dir)
-    return job_sub_dir
-
-
-def remove_job_dir(job_dir):
-    # remove the job sub-directory from k8s
-    shutil.rmtree(job_dir)
