@@ -56,8 +56,8 @@ class UndeployCommand(Command):
                 if job_name in jobs_list:
                     self._undeploy_job(namespace, job_name)
                 else:
-                    print('Job-name %s not found in:' % job_name)
-                    print(*jobs_list, sep='\n')
+                    print('Job-name %s not found in: %s' % (job_name,
+                                                            jobs_list))
                     sys.exit(1)
             elif len(jobs_list) == 1:
                 self._undeploy_job(namespace, jobs_list.pop())

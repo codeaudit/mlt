@@ -230,9 +230,9 @@ def test_undeploy_by_bad_job_name(remove_job_dir_mock,
                                   get_deployed_jobs_mock):
     """tests `mlt undeploy --job-name` with a non existing job name."""
     remove_job_dir_mock.input_value = 'k8s/job1'
-    get_deployed_jobs_mock.return_value = {"job1", "job3"}
+    get_deployed_jobs_mock.return_value = {"job1"}
     command = {'undeploy': True, '--job-name': 'job2'}
-    undeploy_fail('Job-name job2 not found in:' + '\njob3\njob1', command)
+    undeploy_fail("Job-name job2 not found in: {'job1'}", command)
 
 
 def test_undeploy_synced(colored_mock,
