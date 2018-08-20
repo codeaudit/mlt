@@ -257,8 +257,13 @@ class CommandTester(object):
         # kill the 'mlt logs' process
         p.send_signal(signal.SIGINT)
 
-    def undeploy(self):
-        self._launch_popen_call(['mlt', 'undeploy'])
+    def undeploy(self, all_jobs=False, job_name=None):
+        command = ['mlt', 'undeploy']
+        if all_jobs:
+            command.append("--all")
+        elif job_name:
+            command.append("--job-name={}".format(job_name))
+        self._launch_popen_call(command)
         # verify no more deployment job
         # TODO: this will always return a 0 exit code...
         self._launch_popen_call(

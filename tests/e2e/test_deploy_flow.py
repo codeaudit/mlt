@@ -104,6 +104,7 @@ class TestDeployFlow(CommandTester):
         self.deploy()
         self.verify_pod_status()
         self.status()
+        self.undeploy()
         self.deploy(no_push=True)
         self.verify_pod_status()
         self.status()
@@ -128,6 +129,7 @@ class TestDeployFlow(CommandTester):
         self.deploy()
         self.verify_pod_status()
         self.status()
+        self.undeploy()
         self.deploy(no_push=True)
         self.verify_pod_status()
         self.status()
@@ -163,3 +165,15 @@ class TestDeployFlow(CommandTester):
                     config_value="False")
         self.deploy(no_push=True)
         self.verify_pod_status(expected_status="Failed")
+
+    def test_undeploy_all(self):
+        """test `mlt undeploy --all` command."""
+        self.init()
+        self.build()
+        self.deploy()
+        self.verify_pod_status()
+        self.status()
+        self.deploy()
+        self.verify_pod_status()
+        self.status()
+        self.undeploy(all_jobs=True)
