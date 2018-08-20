@@ -209,10 +209,9 @@ def test_undeploy_custom_delete_job_dir(
     get_deployed_jobs_mock.return_value = {"job1"}
     os_path_exists_mock.return_value = True
     with catch_stdout() as output:
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(OSError):
             UndeployCommand({'undeploy': True}).action()
-        assert output.getvalue().strip() == \
-            "No such file or directory: 'k8s/job1'"
+        assert"No such file or directory: 'k8s/job1'" in output.getvalue()
 
 
 def test_undeploy_by_job_name(
@@ -232,7 +231,10 @@ def test_undeploy_by_bad_job_name(remove_job_dir_mock,
     remove_job_dir_mock.input_value = 'k8s/job1'
     get_deployed_jobs_mock.return_value = {"job1"}
     command = {'undeploy': True, '--job-name': 'job2'}
-    undeploy_fail("Job-name job2 not found in: {'job1'}", command)
+    with catch_stdout() as output:
+        with pytest.raises(SystemExit):
+            UndeployCommand(command).action()
+        assert"Job-name job2 not found" in output.getvalue()
 
 
 def test_undeploy_synced(colored_mock,
