@@ -44,6 +44,10 @@ class TestDeployFlow(CommandTester):
             try:
                 self.undeploy()
                 self.status()
+            except SystemExit:
+                # this means that the namespace and k8s resources are
+                # already deleted or were never created
+                pass
             finally:
                 # tear down namespace at end of test
                 try:
