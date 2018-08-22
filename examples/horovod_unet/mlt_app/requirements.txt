@@ -1,4 +1,4 @@
-setuptools
+setuptools==39.1.0
 h5py
 keras
 horovod

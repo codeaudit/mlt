@@ -20,8 +20,8 @@
 pushd .
 mkdir -p /tmp/ksonnet
 cd /tmp/ksonnet
-curl -LO https://github.com/ksonnet/ksonnet/releases/download/v0.9.2/ks_0.9.2_linux_amd64.tar.gz
-tar -xvf ks_0.9.2_linux_amd64.tar.gz
-mv -f ./ks_0.9.2_linux_amd64/ks /usr/local/bin/ks
+curl -LO https://github.com/ksonnet/ksonnet/releases/download/v0.11.0/ks_0.11.0_linux_amd64.tar.gz
+tar -xvf ks_0.11.0_linux_amd64.tar.gz
+mv -f ./ks_0.11.0_linux_amd64/ks /usr/local/bin/ks
 popd
 rm -rf /tmp/ksonnet

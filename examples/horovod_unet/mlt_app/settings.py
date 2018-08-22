@@ -20,8 +20,8 @@
 
 import os
 
-BASE = os.environ.get('BASE_DIR', '/var/datasets/unet/vck-resource-8fd827a8-809a-11e8-b982-0a580a480bd4')
-OUT_PATH = os.environ.get('OUTPUT_PATH', '/var/datasets/unet/vck-resource-8fd827a8-809a-11e8-b982-0a580a480bd4')
+DATA_PATH = os.environ.get('DATA_PATH', '/var/datasets/unet/vck-resource-8fd827a8-809a-11e8-b982-0a580a480bd4')
+OUTPUT_PATH = os.environ.get('OUTPUT_PATH', '/var/datasets/unet/vck-resource-8fd827a8-809a-11e8-b982-0a580a480bd4')
 
 IMG_HEIGHT = 128
 IMG_WIDTH = 128
@@ -29,9 +29,9 @@ IMG_WIDTH = 128
 NUM_IN_CHANNELS = 1
 NUM_OUT_CHANNELS = 1
 
-EPOCHS = 15
+EPOCHS = 10
 BATCH_SIZE = 128
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.0005
 PRINT_MODEL = False
 
 # Mode 1: Use flair to identify the entire tumor
@@ -39,11 +39,7 @@ PRINT_MODEL = False
 # Mode 3: Use T2 to identify the active core (necrosis, enhancing, non-enh)
 MODE = 1  # 1, 2, or 3
 
-import psutil
-
 BLOCKTIME = 0
-NUM_INTER_THREADS = 2
-NUM_INTRA_THREADS = psutil.cpu_count(logical=False)  # Total number of physical cores across all sockets
 
 CHANNELS_FIRST = False
 USE_KERAS_API = True

@@ -3,15 +3,14 @@
   "template_name": "horovod",
   "namespace": "unet",
   "template_parameters": {
-    "log_dir": "_multiworker",
     "num_nodes": "2",
     "num_workers_per_node": "1",
     "num_inter_threads": "2",
     "sockets_per_node": "1",
     "gpus": "0",
-    "base_dir": "/var/datasets/unet/vck-resource-8fd827a8-809a-11e8-b982-0a580a480bd4",
+    "data_path": "/var/datasets/unet/vck-resource-8fd827a8-809a-11e8-b982-0a580a480bd4",
     "output_path": "/var/datasets/unet/vck-resource-8fd827a8-809a-11e8-b982-0a580a480bd4"
   },
-  "registry": "<docker_or_gcr_registry>",
+  "registry": "<gcr.io/project_id>or<docker.io/repo_name>",
   "template_git_sha": "f5ca4c85d559656d7a78549d3cde4a977db1a037"
 }

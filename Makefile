@@ -144,6 +144,10 @@ docker:
 		--build-arg no_proxy=${no_proxy} \
 		-t mlt .
 
+# useful for linux users to get every outside dependency required for mlt to work
+debian_prereq_install:
+	@./scripts/debian_prereq_install.sh
+
 env-up: docker
 	docker-compose up -d
 
@@ -162,11 +166,8 @@ test-e2e-setup-circleci: env-up
 	docker-compose exec test bash -c "docker login -u _json_key --password-stdin https://gcr.io < mltkey.json"
 	docker-compose exec test bash -c "./google-cloud-sdk/bin/gcloud auth activate-service-account mltjson@intelai-mlt.iam.gserviceaccount.com --key-file=mltkey.json"
 	docker-compose exec test bash -c "ln -sf /usr/share/mlt/google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud"
-	docker-compose exec test bash -c "/usr/share/mlt/scripts/ksonnet_install_linux.sh"
-	docker-compose exec test bash -c "/usr/share/mlt/scripts/ksync_install.sh"
+	docker-compose exec test bash -c "GITHUB_TOKEN=${GITHUB_TOKEN} /usr/share/mlt/scripts/debian_prereq_install.sh"
 	docker-compose exec test bash -c "ln -sf /root/.ksync/bin/ksync /usr/local/bin/ksync"
-	docker-compose exec test bash -c "wget -O /usr/local/bin/kubetail https://raw.githubusercontent.com/johanhaleby/kubetail/1.6.1/kubetail"
-	docker-compose exec test bash -c "chmod +x /usr/local/bin/kubetail"
 
 test-e2e-circleci: test-e2e-setup-circleci
 	docker-compose exec test env MLT_REGISTRY=gcr.io/intelai-mlt env TESTOPTS="-n ${MAX_NUMBER_OF_THREADS_E2E}" tox -e py${PY}-e2e

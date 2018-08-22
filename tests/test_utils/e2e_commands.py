@@ -38,16 +38,21 @@ from project import basedir
 
 
 class CommandTester(object):
-    @classmethod
+
     @pytest.fixture(scope='class', autouse=True)
     def setup(self):
+        # workaround for issue described here:
+        # https://github.com/pytest-dev/pytest/issues/3778
+            # issuecomment-411899446
+        # this will enable us to use pytest 3.7.1
+
         # just in case tests fail, want a clean namespace always
-        self.registry = os.getenv('MLT_REGISTRY', 'localhost:5000')
+        type(self).registry = os.getenv('MLT_REGISTRY', 'localhost:5000')
 
         # ANY NEW TFJOBS NEED TO HAVE THEIR TEMPLATE NAMES LISTED HERE
         # TFJob terminates pods after completion so can't check old pods
         # for status of job completion
-        self.tfjob_templates = ('tf-dist-mnist', 'tf-distributed')
+        type(self).tfjob_templates = ('tf-dist-mnist', 'tf-distributed')
 
     def _set_new_mlt_project_vars(self, template):
         """init calls this function to reset a new project's test vars"""
@@ -217,11 +222,42 @@ class CommandTester(object):
         if interactive:
             deploy_cmd.append('--interactive')
         if logs:
-            deploy_cmd.append('--logs')
-            p = self._launch_popen_call(deploy_cmd, wait=True)
+            # make log command string so we can shell it out due to ">"
+            log_file = '/tmp/logFile{}'.format(self.app_name)
+            deploy_cmd = " ".join(deploy_cmd) + \
+                         ' --logs > {}'.format(log_file)
+            # we want to kill all procs generated from our group
+            # includes subprocs of subprocs (mlt deploy --> kubetail)
+            p = self._launch_popen_call(
+                deploy_cmd, wait=True, shell=True, stdout=True,
+                stderr=True, preexec_fn=os.setpgrp)
 
-            # kill the 'mlt logs' process
-            p.send_signal(signal.SIGINT)
+            # try for 10 min to check if log file has been written to yet
+            for check in range(600):
+                # don't delete the log file after test runs in case dev needs
+                # to debug why test fails
+                try:
+                    output = ''
+                    with open(log_file, "r") as f:
+                        output = f.read()
+                    """verify log output as `mlt deploy --logs` chains
+                       subprocess calls and we don't track pid so we can't
+                       access sub-subproc log output via piping output to
+                       other proc
+                    """
+                    assert "Will tail" in output
+                    assert self.app_name in output
+                    break
+                except (AssertionError, IOError):
+                    # ignore if file doesn't exist yet (model not deployed yet)
+                    # also ignore if file created but not written to yet
+                    pass
+                time.sleep(1)
+            else:
+                raise ValueError("No log output found.")
+
+            # kill `mlt deploy`'s `kubetail` call (subprocess of subprocess)
+            os.killpg(os.getpgid(p.pid), signal.SIGINT)
             return
         else:
             self._launch_popen_call(deploy_cmd)
@@ -304,7 +340,7 @@ class CommandTester(object):
     def _launch_popen_call(self, command, cwd=None,
                            return_output=False, shell=False, stdout=PIPE,
                            stderr=PIPE, stderr_is_not_okay=False,
-                           wait=False):
+                           wait=False, preexec_fn=None):
         """Lightweight wrapper that launches run_popen and handles dumping
            output if there was an error
            cwd: where to launch popen call from
@@ -321,12 +357,16 @@ class CommandTester(object):
                            commands that actually don't want any stderr.
            wait: for the build watch command, we don't want to call `.wait()`
                     on it because we need to check when we edit watched file
+           preexec_fn: runs a func after the fork() call but before exec()
+                       to run the shell. Useful for killing subprocesses of
+                       subprocesses (like `mlt deploy -l` --> `kubetail`)
         """
         if cwd is None:
             # default to project dir if that's defined, otherwise just use /tmp
             cwd = getattr(self, 'project_dir', '/tmp')
         p = run_popen(command, stdout=stdout,
-                      stderr=stderr, shell=shell, cwd=cwd)
+                      stderr=stderr, shell=shell, cwd=cwd,
+                      preexec_fn=preexec_fn)
         if not wait:
             out, err = p.communicate()
 
@@ -350,7 +390,7 @@ class CommandTester(object):
         """verify that our latest job did indeed get deployed to k8s and
          gets to the specified status"""
         # TODO: probably refactor this function
-        # allow for 2 min for the pod to start creating;
+        # allow for 3 min for the pod to start creating;
         # pytorch operator causes pods to fail for a bit before success
         # which is out of our hands
         start = time.time()
@@ -358,11 +398,17 @@ class CommandTester(object):
         while pod_status is None:
             try:
                 pod_status = self._grab_latest_pod_or_tfjob()
-            except (ValueError, IndexError, KeyError):
+            # there are so many different kinds of errors if pods aren't
+            # ready yet that we'll ignore all of them
+            except:  # noqa
                 # if no pod is available, or pods is an empty dict, ignore
                 # for 2 mins
+                # OSError is to handle this:
+                # `couldn't find any field with path "{.status.startTime}"
+                # in the list of objects``
+                # if there are no pods yet
                 time.sleep(1)
-                if time.time() - start >= 120:
+                if time.time() - start >= 180:
                     break
 
         # wait for pod to finish, up to 5 min for pending and 5 for running

@@ -23,6 +23,9 @@ SECRET=openmpi-secret
 # https://github.com/ksonnet/ksonnet/issues/298
 export USER=root
 
+# set your GITHUB_TOKEN otherwise deployment will fail with API Limit error
+export GITHUB_TOKEN=$GITHUB_TOKEN
+
 {
 # Generate one-time ssh keys used by Open MPI.
 SECRET=openmpi-secret

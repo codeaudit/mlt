@@ -95,7 +95,7 @@ class TestDeployFlow(CommandTester):
         self.status()
         self.logs()
         self.status()
-        self.deploy(logs=True, no_push=True)
+        self.deploy(logs=True, retries=300, no_push=True)
         self.verify_pod_status()
 
     def test_no_push_deploy(self):

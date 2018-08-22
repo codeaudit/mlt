@@ -160,7 +160,7 @@ class DeployCommand(Command):
         if self.args["--interactive"] and not self._replicas_found \
                 and self._total_containers == 1:
             self._exec_into_pod(self._get_most_recent_podname())
-        else:
+        elif self.args["--interactive"]:
             print("More than one container created."
                   ".\nCall `kubectl exec -it {{pod_name_here}} "
                   "--namespace={} /bin/bash` on a `Running` pod NAME "

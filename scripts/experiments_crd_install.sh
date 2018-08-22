@@ -1,3 +1,5 @@
+#! /bin/bash
+#
 # Copyright (c) 2018 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,15 +17,10 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-FROM intelaipg/intel-optimized-tensorflow:1.9.0-mkl-py3
-
-ADD requirements.txt /src/deps/requirements.txt
-RUN pip install -r /src/deps/requirements.txt
-
-WORKDIR /src/app
-ADD . /src/app
-
-RUN pycodestyle -v .
-
-# debug wrapper, followed by the model training script to execute
-ENTRYPOINT [ "python", "kubernetes_debug_wrapper.py", "main.py" ]
+git clone https://github.com/IntelAI/experiments.git
+pushd experiments
+EXPERIMENTS_VERISON=`cat ../mlt-templates/experiments/EXPERIMENTS_VERSION.txt`
+git checkout ${EXPERIMENTS_VERISON}
+kubectl create -f resources/crds/experiment-crd.yaml
+kubectl create -f resources/crds/result-crd.yaml
+popd

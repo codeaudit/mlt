@@ -15,25 +15,7 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-FROM python:3.6
-
-ENV CONDA_DIR /opt/anaconda3
-RUN mkdir -p $CONDA_DIR
-
-# Download and Install Miniconda
-ARG CONDA_VERSION="3-4.5.4"
-RUN \
-    wget -q --no-check-certificate https://repo.continuum.io/miniconda/Miniconda${CONDA_VERSION}-Linux-x86_64.sh -P $CONDA_DIR && \
-    bash $CONDA_DIR/Miniconda${CONDA_VERSION}-Linux-x86_64.sh -f -b -p $CONDA_DIR && \
-    rm -rf $CONDA_DIR/Miniconda${CONDA_VERSION}*x86_64.sh
-
-#Add conda binaries to path
-ENV PATH $CONDA_DIR/bin:$PATH
-
-ARG TF_VERSION="1.8.0"
-RUN conda install -c anaconda tensorflow==$TF_VERSION && \
-    conda install pip && \
-    conda clean --all
+FROM intelaipg/intel-optimized-tensorflow:1.9.0-mkl-py3
 
 ADD requirements.txt /src/deps/requirements.txt
 RUN pip install -r /src/deps/requirements.txt

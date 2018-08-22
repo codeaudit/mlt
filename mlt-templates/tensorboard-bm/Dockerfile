@@ -15,7 +15,7 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-FROM python:3.6
+FROM intelaipg/intel-optimized-tensorflow:1.9.0-mkl-py3
 
 ADD requirements.txt /src/deps/requirements.txt
 RUN pip install -r /src/deps/requirements.txt

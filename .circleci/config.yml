@@ -113,31 +113,18 @@ jobs:
             --zone "us-west1-b"
 
       - run:
-          name: Install kubeflow for TFJob operator
+          name: Set clusterrolebinding for kubeflow install later
           command: |
             # since running on a cluster with RBAC enabled, need workaround
             # https://github.com/kubeflow/kubeflow/blob/master/user_guide.md#rbac-clusters
             kubectl create clusterrolebinding default-admin --clusterrole=cluster-admin --user=mltjson@intelai-mlt.iam.gserviceaccount.com
-            chmod +x ./scripts/kubeflow_install.sh
-            ./scripts/kubeflow_install.sh
 
       - run:
-          name: Install ksync on both client and cluster
+          name: Install ksync on cluster
           command: |
             # Please refer to https://github.com/vapor-ware/ksync for manual installation
-            chmod +x ./scripts/ksync_install.sh
+            # user needs privs to do this on cluster so doing this here as well
             ./scripts/ksync_install.sh
-
-      - run:
-          name: Install experiments CRDs
-          command: |
-            git clone https://github.com/IntelAI/experiments.git
-            cd experiments
-            EXPERIMENTS_VERISON=`cat ../mlt-templates/experiments/EXPERIMENTS_VERSION.txt`
-            git checkout ${EXPERIMENTS_VERISON}
-            kubectl create -f resources/crds/experiment-crd.yaml
-            kubectl create -f resources/crds/result-crd.yaml
-            cd ..
 
       - run:
           name: Run e2e tests

@@ -54,7 +54,9 @@ repo. Copied below list of files
         ```
     * preprocess.py - To mask .npy files
     * converter.py - To convert RAW images to .npy files
-    * hvd_train.py - Main model file
+    * main.py - Main model file
+    * data.py - data loader, you can modify it for your data
+    * model.py - defining your model
     * exec_multiworker - script to initiate horovod training
 
  2. This template includes two dockerfiles `dockerfile.cpu` and `dockerfile.gpu`, approprtiate dockerfile will be picked by
@@ -224,3 +226,7 @@ level=info msg="Deleting component 'unet-horovod-8bfb7b80-8ee7-4710-b16e-7b58c37
 level=info msg="Successfully deleted component 'unet-horovod-8bfb7b80-8ee7-4710-b16e-7b58c37bb787'"
 /Users/kvadla/git-repo/mlt/examples/horovod_unet/mlt_app
 ```
+
+## Tensorboard results
+
+![Tensorboard screenshot](tensorboard.png)
