@@ -264,6 +264,26 @@ class CommandTester(object):
         elif job_name:
             command.append("--job-name={}".format(job_name))
         self._launch_popen_call(command)
+
+    # TODO: merge with undeploy(...) to use undeploy(all_jobs)=True
+    # in teardown()
+    def undeploy__for_test_teardown(self):
+        """use `mlt undeploy --all` in test teardown."""
+        command = ['mlt', 'undeploy', '--all']
+        cwd = getattr(self, 'project_dir', '/tmp')
+        p = run_popen(command, shell=False, stdout=PIPE,
+                      stderr=PIPE, cwd=cwd)
+        out, err = p.communicate()
+        error_msg = "Popen call failed:\nSTDOUT:{}\n\nSTDERR:{}".format(
+                str(out), colored(str(err), 'red'))
+        if p.returncode == 1:
+            # in case of no jobs undeploy, where the
+            # `mlt undeploy --all` returns this
+            # 'This app has not been deployed yet.' as output.
+            assert p.wait() == 1, error_msg
+        else:
+            # successfully undeployed existing jobs
+            assert p.wait() == 0, error_msg
         # verify no more deployment job
         # TODO: this will always return a 0 exit code...
         self._launch_popen_call(
@@ -315,7 +335,6 @@ class CommandTester(object):
             # TODO: doesn't p.wait() check error code? Can you have `err` and
             # exit code of 0?
             assert p.wait() == 0, error_msg
-
             if stderr_is_not_okay is True:
                 assert not err, error_msg
 

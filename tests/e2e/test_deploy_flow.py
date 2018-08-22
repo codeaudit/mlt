@@ -42,12 +42,8 @@ class TestDeployFlow(CommandTester):
         finally:
             # no matter what, undeploy and check status
             try:
-                self.undeploy()
+                self.undeploy_test_teardown()
                 self.status()
-            except SystemExit:
-                # this means that the namespace and k8s resources are
-                # already deleted or were never created
-                pass
             finally:
                 # tear down namespace at end of test
                 try:
@@ -177,7 +173,7 @@ class TestDeployFlow(CommandTester):
         self.deploy()
         self.verify_pod_status()
         self.status()
-        self.deploy()
+        self.deploy(no_push=True)
         self.verify_pod_status()
         self.status()
         self.undeploy(all_jobs=True)
