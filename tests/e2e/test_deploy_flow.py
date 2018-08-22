@@ -42,7 +42,7 @@ class TestDeployFlow(CommandTester):
         finally:
             # no matter what, undeploy and check status
             try:
-                self.undeploy_test_teardown()
+                self.undeploy_for_test_teardown()
                 self.status()
             finally:
                 # tear down namespace at end of test

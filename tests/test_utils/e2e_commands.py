@@ -267,7 +267,7 @@ class CommandTester(object):
 
     # TODO: merge with undeploy(...) to use undeploy(all_jobs)=True
     # in teardown()
-    def undeploy__for_test_teardown(self):
+    def undeploy_for_test_teardown(self):
         """use `mlt undeploy --all` in test teardown."""
         command = ['mlt', 'undeploy', '--all']
         cwd = getattr(self, 'project_dir', '/tmp')
