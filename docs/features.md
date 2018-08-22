@@ -166,12 +166,17 @@ was deployed for the current project directory.
 ### mlt undeploy
 
 ```
-  mlt undeploy
+  mlt undeploy [--all] [--job-name=<name>]
 ```
 
-This command undeploys the last job that was deployed from the current
+This command undeploys the jobs that were deployed from the current
 project directory.  This frees resources in Kubernetes by deleting the
 associated job, pods, deployments, etc.
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--all` | Undeploys all the jobs that were deployed from the current project directory.|
+| `--job-name=<name>` | The name of the job to undeploy. |
 
 ### mlt update-template (alpha)
 

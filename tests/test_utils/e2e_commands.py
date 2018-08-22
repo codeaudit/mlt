@@ -275,7 +275,7 @@ class CommandTester(object):
                       stderr=PIPE, cwd=cwd)
         out, err = p.communicate()
         error_msg = "Popen call failed:\nSTDOUT:{}\n\nSTDERR:{}".format(
-                str(out), colored(str(err), 'red'))
+            str(out), colored(str(err), 'red'))
         if p.returncode == 1:
             # in case of no jobs undeploy, where the
             # `mlt undeploy --all` returns this
