@@ -369,7 +369,7 @@ class CommandTester(object):
 
             error_msg = "Popen call failed:\nSTDOUT:{}\n\nSTDERR:{}".format(
                 str(out), colored(str(err), 'red'))
-            if allow_err & p.wait() != 0:
+            if allow_err and p.wait() != 0:
                 output = out.decode("utf-8").strip()
                 assert output == expected_err_msg, error_msg
             else:

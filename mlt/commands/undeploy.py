@@ -59,7 +59,7 @@ class UndeployCommand(Command):
                           .format(job_name, jobs_list))
                     sys.exit(1)
             elif len(jobs_list) == 1:
-                self._undeploy_job(namespace, jobs_list.pop())
+                self._undeploy_job(namespace, jobs_list[0])
             else:
                 print("Multiple jobs are found under this application, "
                       "please try `mlt undeploy --all` or specify a single"
