@@ -104,10 +104,10 @@ class TestDeployFlow(CommandTester):
         self.deploy()
         self.verify_pod_status()
         self.status()
-        self.undeploy()
         self.deploy(no_push=True)
         self.verify_pod_status()
         self.status()
+        self.undeploy(all_jobs=True)
 
     @pytest.mark.parametrize('template', ['hello-world', 'tf-distributed'])
     def test_interactive_deploy(self, template):
@@ -129,10 +129,10 @@ class TestDeployFlow(CommandTester):
         self.deploy()
         self.verify_pod_status()
         self.status()
-        self.undeploy()
         self.deploy(no_push=True)
         self.verify_pod_status()
         self.status()
+        self.undeploy(all_jobs=True)
 
     def test_debug_wrapper(self):
         """tests debug_on_fail param"""
@@ -166,14 +166,3 @@ class TestDeployFlow(CommandTester):
         self.deploy(no_push=True)
         self.verify_pod_status(expected_status="Failed")
 
-    def test_undeploy_all(self):
-        """test `mlt undeploy --all` command."""
-        self.init()
-        self.build()
-        self.deploy()
-        self.verify_pod_status()
-        self.status()
-        self.deploy(no_push=True)
-        self.verify_pod_status()
-        self.status()
-        self.undeploy(all_jobs=True)

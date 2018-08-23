@@ -301,25 +301,15 @@ class CommandTester(object):
             command.append("--job-name={}".format(job_name))
         self._launch_popen_call(command)
 
-    # TODO: merge with undeploy(...) to use undeploy(all_jobs)=True
+    # TODO: merge with undeploy(...) to use undeploy(all_jobs=True)
     # in teardown()
     def undeploy_for_test_teardown(self):
         """use `mlt undeploy --all` in test teardown."""
         command = ['mlt', 'undeploy', '--all']
-        cwd = getattr(self, 'project_dir', '/tmp')
-        p = run_popen(command, shell=False, stdout=PIPE,
-                      stderr=PIPE, cwd=cwd)
-        out, err = p.communicate()
-        error_msg = "Popen call failed:\nSTDOUT:{}\n\nSTDERR:{}".format(
-            str(out), colored(str(err), 'red'))
-        if p.returncode == 1:
-            # in case of no jobs undeploy, where the
-            # `mlt undeploy --all` returns this
-            # 'This app has not been deployed yet.' as output.
-            assert p.wait() == 1, error_msg
-        else:
-            # successfully undeployed existing jobs
-            assert p.wait() == 0, error_msg
+        # expected output message in case of second undeploy
+        expected_out = "This app has not been deployed yet."
+        self._launch_popen_call(command, allow_err=True,
+                                expected_err_msg=expected_out)
         # verify no more deployment job
         # TODO: this will always return a 0 exit code...
         self._launch_popen_call(
@@ -337,10 +327,12 @@ class CommandTester(object):
         assert output
         return output.decode("utf-8")
 
-    def _launch_popen_call(self, command, cwd=None,
-                           return_output=False, shell=False, stdout=PIPE,
+    def _launch_popen_call(self,
+                           command,cwd=None,
+                            return_output=False, shell=False, stdout=PIPE,
                            stderr=PIPE, stderr_is_not_okay=False,
-                           wait=False, preexec_fn=None):
+                           wait=False, preexec_fn=None, allow_err=False,
+                           expected_err_msg=None):
         """Lightweight wrapper that launches run_popen and handles dumping
            output if there was an error
            cwd: where to launch popen call from
@@ -360,6 +352,12 @@ class CommandTester(object):
            preexec_fn: runs a func after the fork() call but before exec()
                        to run the shell. Useful for killing subprocesses of
                        subprocesses (like `mlt deploy -l` --> `kubetail`)
+           allow_err: if True, we expect the command to fail and want to
+                      test with an expected error message
+                      `expected_err_msg`.
+           expected_err_msg: the expected error message if the command
+                             execution fails, it's used when `allow_err`
+                             is True.
         """
         if cwd is None:
             # default to project dir if that's defined, otherwise just use /tmp
@@ -372,9 +370,13 @@ class CommandTester(object):
 
             error_msg = "Popen call failed:\nSTDOUT:{}\n\nSTDERR:{}".format(
                 str(out), colored(str(err), 'red'))
-            # TODO: doesn't p.wait() check error code? Can you have `err` and
-            # exit code of 0?
-            assert p.wait() == 0, error_msg
+            if allow_err & p.wait() != 0:
+                output = out.decode("utf-8").strip()
+                assert output == expected_err_msg, error_msg
+            else:
+                # TODO: doesn't p.wait() check error code? Can you have
+                # `err` and exit code of 0?
+                assert p.wait() == 0, error_msg
             if stderr_is_not_okay is True:
                 assert not err, error_msg
 

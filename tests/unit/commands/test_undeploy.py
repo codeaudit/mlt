@@ -85,13 +85,9 @@ def undeploy_fail(fail_text, command):
         assert output.getvalue().strip() == fail_text
 
 
-def test_undeploy_custom(get_sync_spec_mock,
-                         is_custom_mock,
-                         open_mock,
-                         os_path_exists_mock,
-                         subprocess_mock,
-                         remove_job_dir_mock,
-                         get_deployed_jobs_mock):
+def test_undeploy_custom(get_sync_spec_mock, is_custom_mock, open_mock,
+                         os_path_exists_mock, subprocess_mock,
+                         remove_job_dir_mock, get_deployed_jobs_mock):
     """
     Tests successful call to the undeploy command with a custom deploy
     """
@@ -107,10 +103,8 @@ def test_undeploy_custom(get_sync_spec_mock,
         assert output.getvalue().strip() == "Successful Custom Undeploy"
 
 
-def test_undeploy_custom_no_app_deployed(open_mock,
-                                         get_sync_spec_mock,
-                                         is_custom_mock,
-                                         os_path_exists_mock,
+def test_undeploy_custom_no_app_deployed(open_mock, get_sync_spec_mock,
+                                         is_custom_mock, os_path_exists_mock,
                                          get_deployed_jobs_mock):
     """Custom deploy when the app isn't deployed, we should get error"""
     get_sync_spec_mock.return_value = None
@@ -124,11 +118,8 @@ def test_undeploy_custom_no_app_deployed(open_mock,
 
 
 def test_undeploy_custom_multiple_jobs_deployed(
-        open_mock,
-        get_deployed_jobs_mock,
-        get_sync_spec_mock,
-        is_custom_mock,
-        os_path_exists_mock):
+        open_mock, get_deployed_jobs_mock,get_sync_spec_mock,
+        is_custom_mock, os_path_exists_mock):
     """if running `mlt undeploy` while multiple jobs found
     return an error"""
     get_sync_spec_mock.return_value = None
@@ -137,19 +128,15 @@ def test_undeploy_custom_multiple_jobs_deployed(
     command = {'undeploy': True}
     os_path_exists_mock.return_value = True
 
-    undeploy_fail("Multiple jobs are found under this application," +
+    undeploy_fail("Multiple jobs are found under this application, " +
                   "please try `mlt undeploy --all` or specify a single" +
                   " job to undeploy using " +
                   "`mlt undeploy --job-name <job-name>`", command)
 
 
 def test_undeploy_custom_by_job_name(
-        open_mock,
-        get_deployed_jobs_mock,
-        remove_job_dir_mock,
-        get_sync_spec_mock,
-        is_custom_mock,
-        subprocess_mock,
+        open_mock, get_deployed_jobs_mock, remove_job_dir_mock,
+        get_sync_spec_mock, is_custom_mock, subprocess_mock,
         os_path_exists_mock):
     """test `mlt undeploy --job-name` with custom undeploy."""
     get_sync_spec_mock.return_value = None
@@ -164,12 +151,8 @@ def test_undeploy_custom_by_job_name(
 
 
 def test_undeploy_custom_all(
-        open_mock,
-        get_deployed_jobs_mock,
-        remove_job_dir_mock,
-        get_sync_spec_mock,
-        is_custom_mock,
-        subprocess_mock,
+        open_mock, get_deployed_jobs_mock, remove_job_dir_mock,
+        get_sync_spec_mock, is_custom_mock, subprocess_mock,
         os_path_exists_mock):
     """test `mlt undeploy --all."""
     get_sync_spec_mock.return_value = None
@@ -184,9 +167,7 @@ def test_undeploy_custom_all(
                                             '\nSuccessful Custom Undeploy'
 
 
-def test_undeploy(load_config_mock,
-                  proc_helpers,
-                  remove_job_dir_mock,
+def test_undeploy(load_config_mock, proc_helpers, remove_job_dir_mock,
                   get_deployed_jobs_mock):
     """simple undeploy"""
     remove_job_dir_mock.input_value = 'k8s/job1'
@@ -196,12 +177,8 @@ def test_undeploy(load_config_mock,
 
 
 def test_undeploy_custom_delete_job_dir(
-        open_mock,
-        get_deployed_jobs_mock,
-        get_sync_spec_mock,
-        is_custom_mock,
-        subprocess_mock,
-        os_path_exists_mock):
+        open_mock, get_deployed_jobs_mock, get_sync_spec_mock,
+        is_custom_mock, subprocess_mock, os_path_exists_mock):
     """test removing job dir while undeploying it."""
     get_sync_spec_mock.return_value = None
     is_custom_mock.return_value = True
@@ -214,10 +191,8 @@ def test_undeploy_custom_delete_job_dir(
         assert"No such file or directory: 'k8s/job1'" in output.getvalue()
 
 
-def test_undeploy_by_job_name(
-        proc_helpers,
-        remove_job_dir_mock,
-        get_deployed_jobs_mock):
+def test_undeploy_by_job_name( proc_helpers, remove_job_dir_mock,
+                               get_deployed_jobs_mock):
     """tests `mlt undeploy --job-name` to undeploy a job."""
     remove_job_dir_mock.input_value = 'k8s/job1'
     get_deployed_jobs_mock.return_value = {"job1"}
@@ -225,8 +200,8 @@ def test_undeploy_by_job_name(
     proc_helpers.run.assert_called_once()
 
 
-def test_undeploy_by_bad_job_name(remove_job_dir_mock,
-                                  get_deployed_jobs_mock):
+def test_undeploy_by_bad_job_name(
+        remove_job_dir_mock, get_deployed_jobs_mock):
     """tests `mlt undeploy --job-name` with a non existing job name."""
     remove_job_dir_mock.input_value = 'k8s/job1'
     get_deployed_jobs_mock.return_value = {"job1"}
@@ -237,8 +212,7 @@ def test_undeploy_by_bad_job_name(remove_job_dir_mock,
         assert"Job-name job2 not found" in output.getvalue()
 
 
-def test_undeploy_synced(colored_mock,
-                         get_sync_spec_mock):
+def test_undeploy_synced(colored_mock, get_sync_spec_mock):
     """undeploying a synced job, we need to delete the sync first"""
     get_sync_spec_mock.return_value = 'hello-world'
     command = {'undeploy': True}

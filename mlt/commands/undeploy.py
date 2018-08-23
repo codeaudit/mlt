@@ -48,7 +48,6 @@ class UndeployCommand(Command):
             print("This app has not been deployed yet.")
             sys.exit(1)
         else:
-            # Call the specified sub-command
             if self.args.get('--all'):
                 self._undeploy_all(namespace, jobs_list)
             elif self.args.get('--job-name'):
@@ -56,13 +55,12 @@ class UndeployCommand(Command):
                 if job_name in jobs_list:
                     self._undeploy_job(namespace, job_name)
                 else:
-                    print('Job-name %s not found in: %s' % (job_name,
-                                                            jobs_list))
+                    print('Job-name {} not found in: {}'.format(job_name, jobs_list))
                     sys.exit(1)
             elif len(jobs_list) == 1:
                 self._undeploy_job(namespace, jobs_list.pop())
             else:
-                print("Multiple jobs are found under this application,"
+                print("Multiple jobs are found under this application, "
                       "please try `mlt undeploy --all` or specify a single"
                       " job to undeploy using "
                       "`mlt undeploy --job-name <job-name>`")
@@ -81,7 +79,7 @@ class UndeployCommand(Command):
         else:
             process_helpers.run(
                 ["kubectl", "--namespace", namespace, "delete", "-f",
-                 job_dir],
+                 job_dir, "--recursive"],
                 raise_on_failure=True)
         self.remove_job_dir(job_dir)
 
