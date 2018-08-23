@@ -118,7 +118,7 @@ def test_undeploy_custom_no_app_deployed(open_mock, get_sync_spec_mock,
 
 
 def test_undeploy_custom_multiple_jobs_deployed(
-        open_mock, get_deployed_jobs_mock,get_sync_spec_mock,
+        open_mock, get_deployed_jobs_mock, get_sync_spec_mock,
         is_custom_mock, os_path_exists_mock):
     """if running `mlt undeploy` while multiple jobs found
     return an error"""
@@ -191,8 +191,8 @@ def test_undeploy_custom_delete_job_dir(
         assert"No such file or directory: 'k8s/job1'" in output.getvalue()
 
 
-def test_undeploy_by_job_name( proc_helpers, remove_job_dir_mock,
-                               get_deployed_jobs_mock):
+def test_undeploy_by_job_name(proc_helpers, remove_job_dir_mock,
+                              get_deployed_jobs_mock):
     """tests `mlt undeploy --job-name` to undeploy a job."""
     remove_job_dir_mock.input_value = 'k8s/job1'
     get_deployed_jobs_mock.return_value = {"job1"}

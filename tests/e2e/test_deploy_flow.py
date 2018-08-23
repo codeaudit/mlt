@@ -165,4 +165,3 @@ class TestDeployFlow(CommandTester):
                     config_value="False")
         self.deploy(no_push=True)
         self.verify_pod_status(expected_status="Failed")
-

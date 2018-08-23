@@ -327,11 +327,10 @@ class CommandTester(object):
         assert output
         return output.decode("utf-8")
 
-    def _launch_popen_call(self,
-                           command,cwd=None,
-                            return_output=False, shell=False, stdout=PIPE,
-                           stderr=PIPE, stderr_is_not_okay=False,
-                           wait=False, preexec_fn=None, allow_err=False,
+    def _launch_popen_call(self, command, cwd=None, return_output=False,
+                           shell=False, stdout=PIPE, stderr=PIPE,
+                           stderr_is_not_okay=False, wait=False,
+                           preexec_fn=None, allow_err=False,
                            expected_err_msg=None):
         """Lightweight wrapper that launches run_popen and handles dumping
            output if there was an error
