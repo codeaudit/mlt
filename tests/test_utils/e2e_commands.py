@@ -373,9 +373,8 @@ class CommandTester(object):
                 output = out.decode("utf-8").strip()
                 assert output == expected_err_msg, error_msg
             else:
-                # TODO: doesn't p.wait() check error code? Can you have
-                # `err` and exit code of 0?
                 assert p.wait() == 0, error_msg
+
             if stderr_is_not_okay is True:
                 assert not err, error_msg
 

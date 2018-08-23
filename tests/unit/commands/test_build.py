@@ -50,7 +50,15 @@ def popen_mock(patch):
     return patch('process_helpers.run_popen', popen)
 
 
-def test_simple_build(progress_bar_mock, popen_mock, open_mock, init_mock):
+@pytest.fixture
+def prevent_deadlock_mock(patch):
+    prevent_deadlock_mock = MagicMock()
+    prevent_deadlock_mock.return_value.__enter__.return_value = None
+    return patch('process_helpers.prevent_deadlock', prevent_deadlock_mock)
+
+
+def test_simple_build(progress_bar_mock, popen_mock, prevent_deadlock_mock,
+                      open_mock, init_mock):
     progress_bar_mock.duration_progress.side_effect = \
         lambda x, y, z: print('Building')
 
@@ -71,7 +79,8 @@ def test_simple_build(progress_bar_mock, popen_mock, open_mock, init_mock):
     assert starting < building < built
 
 
-def test_build_errors(popen_mock, progress_bar_mock, open_mock, init_mock):
+def test_build_errors(popen_mock, progress_bar_mock, prevent_deadlock_mock,
+                      open_mock, init_mock):
     popen_mock.return_value.poll.return_value = 1  # set to 1 for error
     output_str = "normal output..."
     error_str = "error message..."
@@ -101,7 +110,8 @@ def test_build_errors(popen_mock, progress_bar_mock, open_mock, init_mock):
 
 @patch('mlt.commands.build.time.sleep')
 @patch('mlt.commands.build.Observer')
-def test_watch_build(observer, sleep_mock, open_mock, init_mock):
+def test_watch_build(observer, sleep_mock, prevent_deadlock_mock, open_mock,
+                     init_mock):
     sleep_mock.side_effect = KeyboardInterrupt
 
     build = BuildCommand({'build': True,

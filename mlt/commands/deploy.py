@@ -71,9 +71,10 @@ class DeployCommand(Command):
         self.started_push_time = time.time()
         self._push_docker()
 
-        progress_bar.duration_progress(
-            'Pushing {}'.format(self.config["name"]), last_push_duration,
-            lambda: self.push_process.poll() is not None)
+        with process_helpers.prevent_deadlock(self.push_process):
+            progress_bar.duration_progress(
+                'Pushing {}'.format(self.config["name"]), last_push_duration,
+                lambda: self.push_process.poll() is not None)
 
         # If the push fails, get the stdout and error message and display them
         # to the user, with the error message in red.

@@ -17,11 +17,12 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-
 import pytest
+import sys
+from mock import MagicMock
 from subprocess import CalledProcessError
 
-from mlt.utils.process_helpers import run, run_popen
+from mlt.utils.process_helpers import prevent_deadlock, run, run_popen
 from test_utils.io import catch_stdout
 
 
@@ -106,3 +107,21 @@ def test_run_popen_failed_cmd(popen_mock):
             run_popen(bad_cmd)
         output = caught_output.getvalue().strip()
     assert output == bad_cmd_output
+
+
+@pytest.mark.parametrize("pipe_output", [
+    MagicMock(side_effect=["One line of output", ""], length=3),
+    MagicMock(side_effect=["First line", "Second line", ""], length=4)])
+def test_prevent_deadlock(pipe_output):
+    """Assert that we iterate over the correct amount of output
+       from the 'subprocess'
+    """
+    proc_mock = MagicMock()
+    proc_mock.stdout.readline = pipe_output
+    with prevent_deadlock(proc_mock):
+        pass
+    # python2 treats `iter()` a bit differently and won't count the
+    # sentinel as an iteration loop
+    if sys.version_info[0] < 3:
+        pipe_output.length -= 1
+    assert proc_mock.stdout.readline.call_count == pipe_output.length

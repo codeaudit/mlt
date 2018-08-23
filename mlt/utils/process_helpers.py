@@ -19,6 +19,7 @@
 #
 import os
 import sys
+from contextlib import contextmanager
 from subprocess import check_output, CalledProcessError, Popen, PIPE
 
 
@@ -50,3 +51,15 @@ def run_popen(command, shell=False, stdout=PIPE, stderr=PIPE, cwd=None,
         except CalledProcessError as e:
             print(e.output)
             sys.exit(1)
+
+
+@contextmanager
+def prevent_deadlock(proc):
+    """function designed to read from a process' pipe and prevent deadlock
+       Useful for when we can't use `.communicate()` and need a `.wait()` with
+       also using PIPEs.
+       We won't actually do anything with the output here.
+    """
+    yield
+    for line in iter(proc.stdout.readline, b''):
+        pass
