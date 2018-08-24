@@ -30,10 +30,11 @@ def fetch_action_arg(action, arg):
             return json.load(f).get(arg)
 
 
-def is_custom(target):
+def is_custom(target, cwd='.'):
     custom = False
-    if os.path.isfile('Makefile'):
-        with open('Makefile') as f:
+    makefile_location = os.path.join(cwd, 'Makefile')
+    if os.path.isfile(makefile_location):
+        with open(makefile_location) as f:
             for line in f:
                 if line.startswith(target):
                     custom = True
@@ -43,5 +44,7 @@ def is_custom(target):
 
 def get_deployed_jobs():
     """get the list of the deployed jobs."""
+    # we have a .gitignore file atow in the k8s folder as well so we need to
+    # filter for only dirs
     return [d for d in os.listdir('k8s')
             if os.path.isdir(os.path.join('k8s', d))]

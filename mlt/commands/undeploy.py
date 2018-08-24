@@ -49,40 +49,51 @@ class UndeployCommand(Command):
             sys.exit(1)
         else:
             if self.args.get('--all'):
-                self._undeploy_all(namespace, jobs_list)
+                self._undeploy_jobs(namespace, jobs_list, all_jobs=True)
             elif self.args.get('--job-name'):
                 job_name = self.args['--job-name']
                 if job_name in jobs_list:
-                    self._undeploy_job(namespace, job_name)
+                    self._undeploy_jobs(namespace, job_name)
                 else:
-                    print('Job-name {} not found in: {}'
+                    print('Job name {} not found in: {}'
                           .format(job_name, jobs_list))
                     sys.exit(1)
             elif len(jobs_list) == 1:
-                self._undeploy_job(namespace, jobs_list[0])
+                self._undeploy_jobs(namespace, jobs_list[0])
             else:
                 print("Multiple jobs are found under this application, "
-                      "please try `mlt undeploy --all` or specify a single"
-                      " job to undeploy using "
+                      "please try `mlt undeploy --all` or specify a single "
+                      "job to undeploy using "
                       "`mlt undeploy --job-name <job-name>`")
                 sys.exit(1)
 
-    def _undeploy_all(self, namespace, jobs_list):
-        """undeploy all jobs."""
-        for job in jobs_list:
-            self._undeploy_job(namespace, job)
+    def _undeploy_jobs(self, namespace, jobs, all_jobs=False):
+        """undeploy the jobs passed to us
+           jobs: 1 or more jobs to undeploy
+        """
+        # simplify logic by `looping` over all jobs even if there's just 1
+        if not isinstance(jobs, list):
+            jobs = [jobs]
 
-    def _undeploy_job(self, namespace, job_name):
-        """undeploy the given job name"""
-        job_dir = "k8s/{}".format(job_name)
-        if files.is_custom('undeploy:'):
-            self._custom_undeploy(job_name)
-        else:
+        # if any job isn't custom, we are safe to recursive delete k8s objs
+        # as at least 1 folder will be undeployed this way
+        recursive_delete = False
+        for job in jobs:
+            # there could be a case where the same template has both custom
+            # and non-custom jobs to undeploy. Need to handle both cases
+            if files.is_custom('undeploy:', job):
+                self._custom_undeploy(job)
+            else:
+                recursive_delete = True
+        if recursive_delete:
             process_helpers.run(
                 ["kubectl", "--namespace", namespace, "delete", "-f",
-                 job_dir, "--recursive"],
+                 "k8s", "--recursive"],
                 raise_on_failure=True)
-        self.remove_job_dir(job_dir)
+        # we won't delete job folders unless undeploy was successful
+        # TODO: have this not be in a loop
+        for job in jobs:
+            self.remove_job_dir(job)
 
     def remove_job_dir(self, job_dir):
         """remove the job sub-directory from k8s."""
