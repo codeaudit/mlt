@@ -48,7 +48,7 @@ class UndeployCommand(Command):
             print("This app has not been deployed yet.")
             sys.exit(1)
         else:
-            if self.args.get('--all'):
+            if self.args.get('--all') or len(jobs_list) == 1:
                 self._undeploy_jobs(namespace, jobs_list, all_jobs=True)
             elif self.args.get('--job-name'):
                 job_name = self.args['--job-name']
@@ -58,8 +58,6 @@ class UndeployCommand(Command):
                     print('Job name {} not found in: {}'
                           .format(job_name, jobs_list))
                     sys.exit(1)
-            elif len(jobs_list) == 1:
-                self._undeploy_jobs(namespace, jobs_list[0])
             else:
                 print("Multiple jobs are found under this application, "
                       "please try `mlt undeploy --all` or specify a single "
@@ -93,7 +91,7 @@ class UndeployCommand(Command):
         # we won't delete job folders unless undeploy was successful
         # TODO: have this not be in a loop
         for job in jobs:
-            self.remove_job_dir(job)
+            self.remove_job_dir(os.path.join('k8s', job))
 
     def remove_job_dir(self, job_dir):
         """remove the job sub-directory from k8s."""

@@ -209,7 +209,7 @@ def test_undeploy_by_bad_job_name(
     with catch_stdout() as output:
         with pytest.raises(SystemExit):
             UndeployCommand(command).action()
-        assert"Job-name job2 not found" in output.getvalue()
+        assert"Job name job2 not found" in output.getvalue()
 
 
 def test_undeploy_synced(colored_mock, get_sync_spec_mock):
