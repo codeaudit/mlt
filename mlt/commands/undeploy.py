@@ -48,9 +48,7 @@ class UndeployCommand(Command):
             print("This app has not been deployed yet.")
             sys.exit(1)
         else:
-            if self.args.get('--all') or len(jobs_list) == 1:
-                self._undeploy_jobs(namespace, jobs_list, all_jobs=True)
-            elif self.args.get('--job-name'):
+            if self.args.get('--job-name'):
                 job_name = self.args['--job-name']
                 if job_name in jobs_list:
                     self._undeploy_jobs(namespace, job_name)
@@ -58,6 +56,8 @@ class UndeployCommand(Command):
                     print('Job name {} not found in: {}'
                           .format(job_name, jobs_list))
                     sys.exit(1)
+            elif self.args.get('--all') or len(jobs_list) == 1:
+                self._undeploy_jobs(namespace, jobs_list, all_jobs=True)
             else:
                 print("Multiple jobs are found under this application, "
                       "please try `mlt undeploy --all` or specify a single "
