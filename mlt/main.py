@@ -33,11 +33,12 @@ Usage:
       [--since=<duration>]
   mlt sync (create | reload | delete)
   mlt undeploy [--all] [--job-name=<name>]
-  mlt status
+  mlt status [--job-name=<name>]
   mlt (template | templates) list [--template-repo=<repo>]
   mlt update-template [--template-repo=<repo>]
   mlt (log | logs) [--since=<duration>] [--retries=<retries>]
-  mlt events
+      [--job-name=<name>]
+  mlt events [--job-name=<name>]
 
 Options:
   --template=<template>     Template name for app

@@ -54,6 +54,7 @@ class EventsCommand(Command):
 
         app_run_id = data['app_run_id'].split("-")
 
+        # TODO: when can this happen? @karthik
         if len(app_run_id) < 4:
             print("Please re-deploy app again, something went wrong.")
             sys.exit(1)
@@ -98,4 +99,4 @@ class EventsCommand(Command):
                       "to work".format(str(ex).split()[1]))
             else:
                 print("Exception: {}".format(ex))
-            sys.exit()
+            sys.exit(1)

@@ -44,6 +44,7 @@ def call_logs(config, args):
 
     app_run_id = data['app_run_id'].split("-")
 
+    # TODO: when can this happen? @karthik
     if len(app_run_id) < 2:
         print("Please re-deploy app again, something went wrong.")
         sys.exit(1)
@@ -51,10 +52,10 @@ def call_logs(config, args):
     prefix = "-".join([config["name"], app_run_id[0], app_run_id[1]])
 
     namespace = config['namespace']
-    retires = args["--retries"]
+    retries = args["--retries"]
 
     # check for pod readiness before fetching logs.
-    running = check_for_pods_readiness(namespace, prefix, retires)
+    running = check_for_pods_readiness(namespace, prefix, retries)
 
     if running:
         since = args["--since"]
@@ -79,7 +80,7 @@ def _get_logs(prefix, since, namespace):
         if error_msg:
             if 'command not found' in error_msg:
                 print(colored("Please install `{}`. "
-                      "It is a prerequisite "
+                              "It is a prerequisite "
                               "for `mlt logs` to work"
                               .format(error_msg.split()[1]), 'red'))
             else:
