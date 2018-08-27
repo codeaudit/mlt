@@ -43,21 +43,21 @@ class UndeployCommand(Command):
             sys.exit(1)
 
         namespace = self.config['namespace']
-        jobs_list = files.get_deployed_jobs()
-        if not jobs_list:
+        jobs = files.get_deployed_jobs()
+        if not jobs:
             print("This app has not been deployed yet.")
             sys.exit(1)
         else:
             if self.args.get('--job-name'):
                 job_name = self.args['--job-name']
-                if job_name in jobs_list:
+                if job_name in jobs:
                     self._undeploy_jobs(namespace, job_name)
                 else:
                     print('Job name {} not found in: {}'
-                          .format(job_name, jobs_list))
+                          .format(job_name, jobs))
                     sys.exit(1)
-            elif self.args.get('--all') or len(jobs_list) == 1:
-                self._undeploy_jobs(namespace, jobs_list, all_jobs=True)
+            elif self.args.get('--all') or len(jobs) == 1:
+                self._undeploy_jobs(namespace, jobs, all_jobs=True)
             else:
                 print("Multiple jobs are found under this application, "
                       "please try `mlt undeploy --all` or specify a single "

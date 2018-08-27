@@ -24,7 +24,7 @@ import subprocess
 import sys
 
 from mlt.commands import Command
-from mlt.utils import config_helpers, sync_helpers
+from mlt.utils import config_helpers, files, sync_helpers
 
 
 class StatusCommand(Command):
@@ -45,6 +45,8 @@ class StatusCommand(Command):
         job_name = "-".join([self.config["name"], app_run_id])
         namespace = self.config['namespace']
         user_env = dict(os.environ, NAMESPACE=namespace, JOB_NAME=job_name)
+
+        jobs = files.get_deployed_jobs()
 
         try:
             output = subprocess.check_output(["make", "status"],

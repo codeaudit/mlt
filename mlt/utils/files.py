@@ -17,7 +17,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-
+import glob
 import json
 import os
 
@@ -43,8 +43,7 @@ def is_custom(target, cwd='.'):
 
 
 def get_deployed_jobs():
-    """get the list of the deployed jobs."""
-    # we have a .gitignore file atow in the k8s folder as well so we need to
-    # filter for only dirs
-    return [d for d in os.listdir('k8s')
-            if os.path.isdir(os.path.join('k8s', d))]
+    """get the list of the deployed jobs sorted by creation time"""
+    jobs = glob.glob('k8s' + os.path.sep + '*')
+    jobs.sort(key=lambda x: os.path.getmtime(x))
+    return jobs
