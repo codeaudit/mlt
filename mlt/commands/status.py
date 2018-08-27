@@ -41,13 +41,19 @@ class StatusCommand(Command):
             print("This app has not been deployed yet")
             sys.exit(1)
 
-        app_run_id = data.get('app_run_id', "")
-        job_name = "-".join([self.config["name"], app_run_id])
         namespace = self.config['namespace']
-        user_env = dict(os.environ, NAMESPACE=namespace, JOB_NAME=job_name)
-
         jobs = files.get_deployed_jobs()
+        # display status for only `--count` amount of jobs
+        for job in jobs[:self.args["--count"]]:
+            self._custom_status(job.replace('k8s/', ''), namespace)
 
+    def _custom_status(self, job, namespace):
+        """runs `make status` on any special deployment
+           Special deployment is defined as any one of the following:
+                1. Doesn't have deployment yaml
+                TODO: are there more types?
+        """
+        user_env = dict(os.environ, NAMESPACE=namespace, JOB_NAME=job)
         try:
             output = subprocess.check_output(["make", "status"],
                                              env=user_env,

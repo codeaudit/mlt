@@ -33,7 +33,7 @@ Usage:
       [--since=<duration>] [-v | --verbose]
   mlt sync (create | reload | delete)
   mlt undeploy [--all] [--job-name=<name>]
-  mlt status [--job-name=<name>] [-n | --count]
+  mlt status [--job-name=<name>] [-n <count> | --count <count>]
   mlt (template | templates) list [--template-repo=<repo>]
   mlt update-template [--template-repo=<repo>]
   mlt (log | logs) [--since=<duration>] [--retries=<retries>]
@@ -92,7 +92,7 @@ Options:
   --logs                    Tail logs after deploying [default: False]
   --all                     Undeploy all of the deployed jobs.
   --job-name=<name>         Job name to undeploy.
-  --count                   Number of job statuses to return in `mlt status`
+  --count=<count>           Number of job statuses to return in `mlt status`
                             [default: 10]
 """
 
