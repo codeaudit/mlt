@@ -123,6 +123,14 @@ class TestDeployFlow(CommandTester):
         self.verify_pod_status(expected_status="Running")
         self.status()
 
+    def test_verbose_deploy_and_build(self):
+        """tests hello-world template verbosely"""
+        self.init()
+        self.build(verbose=True)
+        self.deploy(verbose=True)
+        self.verify_pod_status()
+        self.status()
+
     def test_watch_build_and_deploy_no_push(self):
         self.init()
         self.build(watch=True)

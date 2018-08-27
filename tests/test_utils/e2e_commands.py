@@ -176,16 +176,21 @@ class CommandTester(object):
 
         return output, err
 
-    def build(self, watch=False):
+    def build(self, watch=False, verbose=False):
         build_cmd = ['mlt', 'build']
         call_args = {'command': build_cmd}
+
+        if verbose:
+            build_cmd.append('--verbose')
+            call_args['return_output'] = True
+            call_args['stderr_is_not_okay'] = True
+
         if watch:
             build_cmd.append('--watch')
             # we don't want to wait for the popen call to finish
             # because it'll go until we kill it
             call_args['wait'] = True
 
-        if watch:
             build_proc = self._launch_popen_call(**call_args)
             # ensure that `mlt build --watch` has started
             time.sleep(3)
@@ -202,7 +207,12 @@ class CommandTester(object):
                     break
             build_proc.kill()
         else:
-            self._launch_popen_call(**call_args)
+            # verbose displays normal docker output rather than progressbar
+            if verbose:
+                out, _ = self._launch_popen_call(**call_args)
+                assert "Sending build context to Docker daemon" in out, out
+            else:
+                self._launch_popen_call(**call_args)
 
         assert os.path.isfile(self.build_json)
         with open(self.build_json) as f:
@@ -215,12 +225,16 @@ class CommandTester(object):
                 shell=True, stdout=None, stderr=None)
 
     def deploy(self, no_push=False, interactive=False, retries=10,
-               sync=False, logs=False):
+               sync=False, logs=False, verbose=False):
         deploy_cmd = ['mlt', 'deploy', '--retries', str(retries)]
+        call_args = {'command': deploy_cmd}
         if no_push:
             deploy_cmd.append('--no-push')
         if interactive:
             deploy_cmd.append('--interactive')
+        if verbose:
+            deploy_cmd.append('--verbose')
+            call_args['return_output'] = True
         if logs:
             # make log command string so we can shell it out due to ">"
             log_file = '/tmp/logFile{}'.format(self.app_name)
@@ -260,7 +274,12 @@ class CommandTester(object):
             os.killpg(os.getpgid(p.pid), signal.SIGINT)
             return
         else:
-            self._launch_popen_call(deploy_cmd)
+            # verbose displays regular docker output instead of progressar
+            if verbose:
+                out, _ = self._launch_popen_call(**call_args)
+                assert "The push refers to" in out, out
+            else:
+                self._launch_popen_call(**call_args)
 
         if not no_push:
             assert os.path.isfile(self.deploy_json)

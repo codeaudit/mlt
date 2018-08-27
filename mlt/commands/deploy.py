@@ -24,7 +24,7 @@ import time
 import uuid
 import yaml
 from string import Template
-from subprocess import CalledProcessError, check_output, Popen, PIPE, STDOUT
+from subprocess import CalledProcessError, check_output, STDOUT
 from termcolor import colored
 
 from mlt.commands import Command
@@ -63,26 +63,14 @@ class DeployCommand(Command):
             self._tail_logs()
 
     def _push(self):
-        last_push_duration = files.fetch_action_arg(
-            'push', 'last_push_duration')
         self.container_name = files.fetch_action_arg(
             'build', 'last_container')
 
         self.started_push_time = time.time()
         self._push_docker()
 
-        with process_helpers.prevent_deadlock(self.push_process):
-            progress_bar.duration_progress(
-                'Pushing {}'.format(self.config["name"]), last_push_duration,
-                lambda: self.push_process.poll() is not None)
-
-        # If the push fails, get the stdout and error message and display them
-        # to the user, with the error message in red.
-        if self.push_process.poll() != 0:
-            push_stdout, push_error = self.push_process.communicate()
-            print(push_stdout.decode("utf-8"))
-            print(colored(push_error.decode("utf-8"), 'red'))
-            sys.exit(1)
+        if not self.args['--verbose']:
+            self._poll_docker_proc()
 
         with open('.push.json', 'w') as f:
             f.write(json.dumps({
@@ -97,9 +85,35 @@ class DeployCommand(Command):
         self.remote_container_name = "{}/{}".format(
             self.config['registry'], self.container_name)
         self._tag()
-        self.push_process = Popen(
-            ["docker", "push", self.remote_container_name],
-            stdout=PIPE, stderr=PIPE)
+
+        push_cmd = ["docker", "push", self.remote_container_name]
+        if self.args['--verbose']:
+            self.push_process = process_helpers.run_popen(
+                push_cmd, stdout=True, stderr=True)
+            self.push_process.wait()
+            # add newline to separate push output from container deploy output
+            print('')
+        else:
+            self.push_process = process_helpers.run_popen(push_cmd)
+
+    def _poll_docker_proc(self):
+        """used only in the case of non-verbose deploy mode to dump loading
+           bar and any error that happened
+        """
+        last_push_duration = files.fetch_action_arg(
+            'push', 'last_push_duration')
+        with process_helpers.prevent_deadlock(self.push_process):
+            progress_bar.duration_progress(
+                'Pushing {}'.format(self.config["name"]), last_push_duration,
+                lambda: self.push_process.poll() is not None)
+
+        # If the push fails, get stdout/stderr messages and display them
+        # to the user, with the error message in red.
+        if self.push_process.poll() != 0:
+            push_stdout, push_error = self.push_process.communicate()
+            print(push_stdout.decode("utf-8"))
+            print(colored(push_error.decode("utf-8"), 'red'))
+            sys.exit(1)
 
     def _tag(self):
         process_helpers.run(

@@ -30,7 +30,7 @@ Usage:
   mlt build [--watch] [-v | --verbose]
   mlt deploy [--no-push] [-i | --interactive] [-l | --logs]
       [--retries=<retries>] [--skip-crd-check]
-      [--since=<duration>]
+      [--since=<duration>] [-v | --verbose]
   mlt sync (create | reload | delete)
   mlt undeploy [--all] [--job-name=<name>]
   mlt status [--job-name=<name>]
@@ -74,7 +74,7 @@ Options:
                             to '.stignore' file.
                             [default: False].
   --watch                   Watch project directory and build on file changes
-  --verbose                 Prints build logs
+  --verbose                 Prints build or deploy logs
   --no-push                 Deploy your project to kubernetes using the same
                             image from your last run.
   --interactive             Rewrites all container commands to infinite sleep,

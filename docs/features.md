@@ -111,7 +111,7 @@ This command builds a local image for the current project directory.
 ```
   mlt deploy [--no-push] [-i | --interactive] [-l | --logs]
       [--retries=<retries>] [--skip-crd-check]
-      [--since=<duration>]
+      [--since=<duration>] [-v | --verbose]
 ```
 
 The `mlt deploy` command pushes the last image that was built for the
@@ -126,6 +126,7 @@ the cluster using Kubernetes.
 | `--retries=<retries>` | Number of times to retry waiting for pods to come up for `--logs` or `--interactive`.  Waits 1 second between retrying. | 10 |
 | `--since` | Returns logs newer than a relative duration like 10s, 1m, or 2h.  Only used in conjunction with the `--logs` option. | 1m |
 | `--skip-crd-check` | Skip checking for the cluster for CRDs required by the template. | False |
+| `-v` `--verbose` | Prints normal docker output rather than a progress bar, similar to `mlt build -v` | False |
 
 | Positional Argument | Description |
 |---------------------|-------------|

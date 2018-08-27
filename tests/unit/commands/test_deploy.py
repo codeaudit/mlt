@@ -22,6 +22,7 @@ from __future__ import print_function
 
 import uuid
 import pytest
+from conditional import conditional
 from mock import call, MagicMock
 
 from mlt.commands.deploy import DeployCommand
@@ -57,17 +58,30 @@ def json_mock(patch):
 def open_mock(patch):
     return patch('open')
 
-
-@pytest.fixture
-def popen_mock(patch):
-    popen_mock = MagicMock()
-    popen_mock.return_value.poll.return_value = 0
-    return patch('Popen', popen_mock)
+# PROCESS_HELPERS MOCKS
 
 
-@pytest.fixture
-def process_helpers(patch):
+@pytest.fixture(autouse=True)
+def process_helpers_mock(patch):
+    # mock every outside process generally, specific mocks below
     return patch('process_helpers')
+
+
+@pytest.fixture
+def run_popen_mock(patch):
+    run_popen_mock = MagicMock()
+    run_popen_mock.return_value.poll.return_value = 0
+    return patch('process_helpers.run_popen', run_popen_mock)
+
+
+@pytest.fixture
+def process_helpers_run_mock(patch):
+    run_mock = MagicMock(side_effect=SystemExit)
+    # want to test that kubectl apply failed
+    return patch('process_helpers.run', run_mock)
+
+
+# END PROCESS_HELPERS MOCKS
 
 
 @pytest.fixture
@@ -119,12 +133,12 @@ def is_custom_mock(patch):
 
 
 def deploy(no_push, skip_crd_check, interactive, extra_config_args, retries=5,
-           template='test', logs=False):
+           template='test', logs=False, verbose=False, catch_exception=None):
     deploy = DeployCommand(
         {'deploy': True, '--no-push': no_push,
          '--skip-crd-check': skip_crd_check,
          '--interactive': interactive, '--retries': retries,
-         '--logs': logs})
+         '--logs': logs, '--verbose': verbose})
     deploy.config = {'name': 'app',
                      'namespace': 'namespace',
                      'template': template}
@@ -132,13 +146,14 @@ def deploy(no_push, skip_crd_check, interactive, extra_config_args, retries=5,
     deploy.config.update(extra_config_args)
 
     with catch_stdout() as caught_output:
-        deploy.action()
+        with conditional(catch_exception, pytest.raises(catch_exception)):
+            deploy.action()
         output = caught_output.getvalue()
     return output
 
 
 def verify_successful_deploy(output, did_push=True, interactive=False,
-                             pod_count=2):
+                             pod_count=2, verbose=False):
     """assert pushing, deploying, then objs created, then pushed"""
     pushing = output.find('Pushing ')
     push_skip = output.find('Skipping image push')
@@ -151,9 +166,15 @@ def verify_successful_deploy(output, did_push=True, interactive=False,
         pod_connect = output.find('watch until pods are `Running`')
 
     if did_push:
-        assert all(var >= 0 for var in (
-            deploying, inspecting, pushing, pushed))
-        assert deploying < inspecting, pushing < pushed
+        # we don't print `pushing ####` stuff in `verbose` mode
+        if not verbose:
+            assert all(var >= 0 for var in (
+                deploying, inspecting, pushing, pushed))
+            assert deploying < inspecting, pushing < pushed
+        else:
+            assert all(var >= 0 for var in (
+                deploying, inspecting, pushed))
+            assert deploying < inspecting, pushed < deploying
     else:
         assert all(var == -1 for var in (pushing, pushed))
         assert all(var >= 0 for var in (deploying, inspecting, push_skip))
@@ -171,10 +192,12 @@ def verify_successful_deploy(output, did_push=True, interactive=False,
     True, False])
 @pytest.mark.parametrize("logs", [
     True, False])
-def test_deploy(walk_mock, call_logs, progress_bar, popen_mock, open_mock,
-                template, kube_helpers, process_helpers, verify_build,
+@pytest.mark.parametrize("verbose", [
+    True, False])
+def test_deploy(walk_mock, call_logs, progress_bar, run_popen_mock, open_mock,
+                template, kube_helpers, verify_build,
                 verify_init, fetch_action_arg, json_mock, get_sync_spec_mock,
-                sync_spec, registry, skip_crd_check, logs):
+                sync_spec, registry, skip_crd_check, logs, verbose):
     """Tests a successful deploy with and without sync_spec, 2 different
        registry types, skipping and not skipping crd_check, and log tailing
     """
@@ -184,13 +207,13 @@ def test_deploy(walk_mock, call_logs, progress_bar, popen_mock, open_mock,
         'last_push_duration': 0.18889}
     output = deploy(
         no_push=False, skip_crd_check=skip_crd_check,
-        interactive=False, logs=logs,
+        interactive=False, logs=logs, verbose=verbose,
         extra_config_args={'registry': registry})
-    verify_successful_deploy(output)
+    verify_successful_deploy(output, verbose=verbose)
 
 
-def test_deploy_without_push(walk_mock, progress_bar, popen_mock, open_mock,
-                             template, kube_helpers, process_helpers,
+def test_deploy_without_push(walk_mock, progress_bar, run_popen_mock,
+                             open_mock, template, kube_helpers,
                              verify_build, verify_init, fetch_action_arg,
                              json_mock):
     json_mock.load.return_value = {
@@ -203,9 +226,9 @@ def test_deploy_without_push(walk_mock, progress_bar, popen_mock, open_mock,
     verify_successful_deploy(output, did_push=False)
 
 
-def test_deploy_interactive_one_file(walk_mock, progress_bar, popen_mock,
+def test_deploy_interactive_one_file(walk_mock, progress_bar, run_popen_mock,
                                      open_mock, template, kube_helpers,
-                                     process_helpers, verify_build,
+                                     verify_build,
                                      verify_init, fetch_action_arg, sleep,
                                      yaml, json_mock):
     walk_mock.return_value = ['foo']
@@ -219,7 +242,7 @@ def test_deploy_interactive_one_file(walk_mock, progress_bar, popen_mock,
     verify_successful_deploy(output, interactive=True, pod_count=1)
 
     # verify that kubectl commands are specifying namespace
-    for call_args in process_helpers.run_popen.call_args_list:
+    for call_args in run_popen_mock.call_args_list:
         assert isinstance(call_args, type(call))
         assert isinstance(call_args[0], tuple)
         assert len(call_args[0]) > 0
@@ -228,9 +251,9 @@ def test_deploy_interactive_one_file(walk_mock, progress_bar, popen_mock,
             assert "--namespace" in command
 
 
-def test_deploy_interactive_two_files(walk_mock, progress_bar, popen_mock,
+def test_deploy_interactive_two_files(walk_mock, progress_bar, run_popen_mock,
                                       open_mock, template, kube_helpers,
-                                      process_helpers, verify_build,
+                                      verify_build,
                                       verify_init, fetch_action_arg, sleep,
                                       yaml, json_mock):
     json_mock.loads.return_value = {'status': {'phase': 'Running'}}
@@ -243,14 +266,14 @@ def test_deploy_interactive_two_files(walk_mock, progress_bar, popen_mock,
     verify_successful_deploy(output, interactive=True)
 
 
-def test_deploy_interactive_pod_not_run(walk_mock, progress_bar, popen_mock,
+def test_deploy_interactive_pod_not_run(walk_mock, progress_bar,
+                                        run_popen_mock,
+                                        process_helpers_run_mock,
                                         open_mock, template, kube_helpers,
-                                        process_helpers, verify_build,
+                                        verify_build,
                                         verify_init, fetch_action_arg, sleep,
                                         yaml, json_mock):
     json_mock.loads.return_value = {'status': {'phase': 'Error'}}
-    # want to test that the kubectl apply failed
-    process_helpers.run.side_effect = SystemExit
     yaml.return_value = {
         'template': {'foo': 'bar'}, 'containers': [{'foo': 'bar'}]}
     with pytest.raises(SystemExit):
@@ -272,8 +295,8 @@ def test_deploy_update_app_run_id(open_mock, json_mock):
     assert json_mock_data['app_run_id'] == run_id
 
 
-def test_image_push_error(walk_mock, progress_bar, popen_mock, open_mock,
-                          template, kube_helpers, process_helpers,
+def test_image_push_error(walk_mock, progress_bar, run_popen_mock, open_mock,
+                          template, kube_helpers,
                           verify_build, verify_init, fetch_action_arg,
                           json_mock):
     json_mock.load.return_value = {
@@ -281,26 +304,20 @@ def test_image_push_error(walk_mock, progress_bar, popen_mock, open_mock,
         'last_push_duration': 0.18889}
 
     # setup mock to induce and error during the deploy
-    popen_mock.return_value.poll.return_value = 1
+    run_popen_mock.return_value.poll.return_value = 1
     output_str = "normal output..."
     error_str = "error message..."
     build_output = MagicMock()
     build_output.decode.return_value = output_str
     error_output = MagicMock()
     error_output.decode.return_value = error_str
-    popen_mock.return_value.communicate.return_value = (build_output,
-                                                        error_output)
+    run_popen_mock.return_value.communicate.return_value = (build_output,
+                                                            error_output)
 
-    deploy_cmd = DeployCommand({'deploy': True,
-                                '--skip-crd-check': True,
-                                '--no-push': False})
-    deploy_cmd.config = {'name': 'app', 'namespace': 'namespace'}
-    deploy_cmd.config.update({'registry': 'gcr://projectfoo'})
-
-    with catch_stdout() as caught_output:
-        with pytest.raises(SystemExit):
-            deploy_cmd.action()
-        output = caught_output.getvalue()
+    output = deploy(
+        no_push=False, skip_crd_check=True, interactive=False,
+        extra_config_args={'registry': 'gcr://projectfoo'},
+        catch_exception=SystemExit)
 
     # assert that we got the normal output, followed by the error message
     output_location = output.find(output_str)
@@ -309,8 +326,8 @@ def test_image_push_error(walk_mock, progress_bar, popen_mock, open_mock,
     assert output_location < error_location
 
 
-def test_no_image_found_error(walk_mock, progress_bar, popen_mock, open_mock,
-                              template, kube_helpers, process_helpers,
+def test_no_image_found_error(walk_mock, progress_bar, run_popen_mock,
+                              open_mock, template, kube_helpers,
                               verify_build, verify_init, fetch_action_arg,
                               json_mock):
     """if we don't have remote_container_name during deploy_new_container
@@ -321,22 +338,15 @@ def test_no_image_found_error(walk_mock, progress_bar, popen_mock, open_mock,
     json_mock.load.return_value = {
         'last_remote_container': 'gcr.io/app_name:container_id',
         'last_push_duration': 0.18889}
-    deploy_cmd = DeployCommand({'deploy': True,
-                                '--skip-crd-check': True,
-                                '--no-push': True})
-    deploy_cmd.config = {'name': 'app', 'namespace': 'namespace'}
-    deploy_cmd.config.update({'registry': 'gcr://projectfoo'})
-
-    with catch_stdout() as caught_output:
-        with pytest.raises(ValueError):
-            deploy_cmd.action()
-        caught_output.getvalue()
+    deploy(
+        no_push=True, skip_crd_check=True, interactive=False,
+        extra_config_args={'registry': 'gcr://projectfoo'},
+        catch_exception=ValueError)
 
 
-def test_deploy_custom_deploy(walk_mock, progress_bar, popen_mock, open_mock,
-                              template, kube_helpers,
-                              process_helpers, subprocess_mock,
-                              verify_build, is_custom_mock,
+def test_deploy_custom_deploy(walk_mock, progress_bar, run_popen_mock,
+                              open_mock, template, kube_helpers,
+                              subprocess_mock, verify_build, is_custom_mock,
                               verify_init, fetch_action_arg, json_mock, ):
     json_mock.load.return_value = {
         'last_remote_container': 'gcr.io/app_name:container_id',
@@ -364,9 +374,9 @@ def test_deploy_custom_deploy(walk_mock, progress_bar, popen_mock, open_mock,
     assert expected_output in output
 
 
-def test_deploy_custom_deploy_interactive(walk_mock, progress_bar, popen_mock,
-                                          open_mock, template, kube_helpers,
-                                          process_helpers, subprocess_mock,
+def test_deploy_custom_deploy_interactive(walk_mock, progress_bar,
+                                          run_popen_mock, open_mock, template,
+                                          kube_helpers, subprocess_mock,
                                           verify_build, is_custom_mock,
                                           verify_init, fetch_action_arg,
                                           json_mock, yaml):
@@ -374,7 +384,6 @@ def test_deploy_custom_deploy_interactive(walk_mock, progress_bar, popen_mock,
         'last_remote_container': 'gcr.io/app_name:container_id',
         'last_push_duration': 0.18889}
     is_custom_mock.return_value = True
-    process_helpers.return_value = u'horovod-test-master 1/1  Running'
     json_mock.loads.return_value = {'status': {'phase': 'Running'}}
     yaml.return_value = {
         'template': {'foo': 'bar'}, 'containers': [{'foo': 'bar'}]}
