@@ -20,6 +20,7 @@
 import glob
 import json
 import os
+import yaml
 
 
 def fetch_action_arg(action, arg):
@@ -47,3 +48,20 @@ def get_deployed_jobs():
     jobs = glob.glob('k8s' + os.path.sep + '*')
     jobs.sort(key=lambda x: os.path.getmtime(x))
     return jobs
+
+
+def get_job_kinds():
+    """returns `kind: ` from K8s yaml files if possible as a set obj
+       also returns whether or not all deployment kinds are the same
+       NOTE: need to be in an mlt project dir
+    """
+    kinds = set()
+    try:
+        for yaml_file in os.listdir('k8s-templates'):
+            with open(os.path.join('k8s-templates', yaml_file), "r") as f:
+                data = yaml.load(f)
+                kinds.add(data['kind'].lower())
+    except FileNotFoundError:
+        return None, False
+
+    return kinds, len(kinds) == 1

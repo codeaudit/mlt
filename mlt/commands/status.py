@@ -24,7 +24,7 @@ import sys
 from datetime import datetime, timezone
 
 from mlt.commands import Command
-from mlt.utils import config_helpers, files, sync_helpers
+from mlt.utils import config_helpers, files, process_helpers, sync_helpers
 
 
 class StatusCommand(Command):
@@ -51,15 +51,42 @@ class StatusCommand(Command):
                 job_name, datetime.fromtimestamp(
                     int(os.path.getmtime(job)), timezone.utc)))
 
-            self._custom_status(job_name, namespace)
+            self._display_status(job_name, namespace)
             # TODO: something more fancy to separate different statuses?
             print('')
+
+    def _display_status(self, job, namespace):
+        """detects what kind of job was deployed and calls the correct
+           status display function
+        """
+        status_options = {
+            "job": self._generic_status,
+            "tfjob": self._tfjob_status,
+            "pytorchjob": self._pytorchjob_status,
+            # experiments have yaml templates but also a bash script to call
+            "experiment": self._custom_status
+        }
+
+        # if we have more than 1 k8 object created and types don't match
+        # go with a custom job type since we won't know what kubectl call
+        # to make to get status from everything
+        job_types, all_same_job_type = files.get_job_kinds()
+        if job_types and len(job_types) > 1 and not all_same_job_type:
+            job_types = "custom"
+        elif job_types:
+            job_types = job_types.pop()
+
+        try:
+            status_options.get(job_types, self._custom_status)(job, namespace)
+        except subprocess.CalledProcessError as e:
+            print("Error while getting app status: {}".format(e.output))
+            sys.exit(1)
 
     def _custom_status(self, job, namespace):
         """runs `make status` on any special deployment
            Special deployment is defined as any one of the following:
                 1. Doesn't have deployment yaml
-                TODO: are there more types?
+                2. Has deployment yaml but many deployments of different kinds
         """
         user_env = dict(os.environ, NAMESPACE=namespace, JOB_NAME=job)
         try:
@@ -79,5 +106,19 @@ class StatusCommand(Command):
                 # get the status command
                 print("This app does not support the `mlt status` command. "
                       "No `status` target was found in the Makefile.")
-            else:
-                print("Error while getting app status: {}".format(e.output))
+
+    def _generic_status(self, job, namespace):
+        """displays simple pod information"""
+        status = process_helpers.run_popen(
+            ["kubectl", "get", "pods", "--namespace", namespace,
+             "-o", "wide", "-a", "-l", "job-name={}".format(job)],
+            stdout=True, stderr=True)
+        status.wait()
+
+    def _tfjob_status(self, job, namespace):
+        """displays status for a TFJob deployment"""
+        print('tfjob')
+
+    def _pytorchjob_status(self, job, namespace):
+        """displays status for a PyTorchJob deployment"""
+        print('pytorch')

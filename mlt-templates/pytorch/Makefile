@@ -35,9 +35,6 @@ build:
 	docker pull pytorch/pytorch:v0.2
 	docker tag pytorch/pytorch:v0.2 ${CONTAINER_NAME}
 
-status:
-	@kubectl get pods --namespace ${NAMESPACE} -o wide -a -l job-name=${JOB_NAME}
-
 # targets starting with 'ksync' are not meant to be exposed by mlt directly
 ksync-watch:
 	@if ! pgrep -x "ksync" > /dev/null; then echo `ksync watch -d`; sleep 5; fi

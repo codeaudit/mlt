@@ -34,9 +34,6 @@ main: main.py
 build:
 	@docker build --build-arg HTTP_PROXY=${HTTP_PROXY} --build-arg HTTPS_PROXY=${HTTPS_PROXY} --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} -t ${CONTAINER_NAME} .
 
-status:
-	@kubectl get pods --namespace ${NAMESPACE} -o wide -a -l job-name=${JOB_NAME}
-
 # targets starting with 'ksync' are not meant to be exposed by mlt directly
 ksync-watch:
 	@if ! pgrep -x "ksync" > /dev/null; then echo `ksync watch -d`; sleep 5; fi
