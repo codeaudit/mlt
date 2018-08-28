@@ -17,11 +17,11 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-
 import json
 import os
 import subprocess
 import sys
+from datetime import datetime, timezone
 
 from mlt.commands import Command
 from mlt.utils import config_helpers, files, sync_helpers
@@ -43,9 +43,17 @@ class StatusCommand(Command):
 
         namespace = self.config['namespace']
         jobs = files.get_deployed_jobs()
+
         # display status for only `--count` amount of jobs
         for job in jobs[:self.args["--count"]]:
-            self._custom_status(job.replace('k8s/', ''), namespace)
+            job_name = job.replace('k8s/', '')
+            print('Job: {} -- Creation Time: {}'.format(
+                job_name, datetime.fromtimestamp(
+                    int(os.path.getmtime(job)), timezone.utc)))
+
+            self._custom_status(job_name, namespace)
+            # TODO: something more fancy to separate different statuses?
+            print('')
 
     def _custom_status(self, job, namespace):
         """runs `make status` on any special deployment
