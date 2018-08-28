@@ -5,7 +5,7 @@ A TensorBoard service in Google Kubernetes cluster.
 This template requires the path to the TensorFlow job logs to be configured.
 The command below shows how to update the log directory value in `k8s-templates/tbjob.yaml`.
 
-`mlt config set template_parameters.logdir <value>`
+`mlt template_config set template_parameters.logdir <value>`
 
 TensorBoard template works with different storage sources, and it's the user's responsibility to allow the TensorBoard service to access the logs location.
 
@@ -34,7 +34,7 @@ kubectl create secret generic gcs-creds --from-literal=awsAccessKeyID=${GCS_ACCE
 From inside the application `cd tensorboard-app` :
 
 2. Set TensorBoard `logdir`.
-`mlt config set template_parameters.logdir S3://<user-bucket-name>/<directory-name>`
+`mlt template_config set template_parameters.logdir S3://<user-bucket-name>/<directory-name>`
 
 3. Create the application image.
 `mlt build`

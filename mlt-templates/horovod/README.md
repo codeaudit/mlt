@@ -19,7 +19,7 @@ Template structure as follows:
 
 If you want to mount your data for training purposes, please set `ks param` in your `deploy.sh` script.
 To use that data, you need to add {extra parameters here} to the `template_parameters` field which you
-can access via `mlt config`.
+can access via `mlt template_config`.
 
 
 ```

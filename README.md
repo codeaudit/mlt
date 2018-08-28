@@ -109,8 +109,10 @@ $ mlt init my-app --template=hello-world
 
 $ cd my-app
 
-# List the config parameters
-$ mlt config list
+# NOTE: `mlt config` has been renamed to `mlt template_config` to avoid confusion regarding developer config settings.
+
+# List template-specific config parameters
+$ mlt template_config list
 Parameter Name                Value
 ----------------------------  ----------------------
 registry                      my-project-12345
@@ -119,10 +121,10 @@ name                          my-app
 template_parameters.greeting  Hello
 
 # Update the greeting parameter
-$ mlt config set template_parameters.greeting Hi
+$ mlt template_config set template_parameters.greeting Hi
 
-# Check the config list to see the updated parameter value
-$ mlt config list
+# Check the template_config list to see the updated parameter value
+$ mlt template_config list
 Parameter Name                Value
 ----------------------------  ----------------------
 registry                      constant-cubist-173123

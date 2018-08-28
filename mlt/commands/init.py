@@ -223,10 +223,10 @@ class InitCommand(Command):
                                   "registry name in your mlt project using one"
                                   " of the following commands. \n\n"
                                   "For Google Container Registry:\n"
-                                  "\tmlt config set registry "
+                                  "\tmlt template_config set registry "
                                   "<google_project_name>\n"
                                   "\nFor a Docker Registry:\n"
-                                  "\tmlt config set registry "
+                                  "\tmlt template_config set registry "
                                   "<registry_name>\n", 'yellow'))
                 else:
                     raise

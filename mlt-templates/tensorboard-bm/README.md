@@ -5,8 +5,8 @@ A TensorBoard service in Kubernetes Bare Metal cluster.
 This template requires configuration of both user domain and Tensorflow job logs path.
 The command below shows how to update the log directory value in `k8s-templates/tbjob.yaml`.
 
-`mlt config set template_parameters.logdir /tmp` , and
-`mlt config set template_parameters.domain my-domain.com`
+`mlt template_config set template_parameters.logdir /tmp` , and
+`mlt template_config set template_parameters.domain my-domain.com`
 
 TensorBoard template works with different storage sources, and it's the user's responsibility to allow the TensorBoard service to access the logs location.
 
@@ -20,8 +20,8 @@ This template assumes that `jq` is installed. `jq` is used while launching Tenso
 `cd tensorboard-app` :
 
 2. Set TensorBoard `logdir` and `domain`.
-`mlt config set template_parameters.logdir <value>` and
-`mlt config set template_parameters.domain <value>`
+`mlt template_config set template_parameters.logdir <value>` and
+`mlt template_config set template_parameters.domain <value>`
 
 3. Create the application image.
 `mlt build`

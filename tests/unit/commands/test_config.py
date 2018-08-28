@@ -25,7 +25,7 @@ import re
 
 from test_utils.io import catch_stdout
 
-from mlt.commands.config import ConfigCommand
+from mlt.commands.config import TemplateConfigCommand
 from mlt.utils import constants
 
 
@@ -40,8 +40,9 @@ def update_config_mock(patch):
 
 
 def config(list=False, set=False, remove=False, name=None, value=None):
-    config_cmd = ConfigCommand({"list": list, "set": set, "remove": remove,
-                                "<name>": name, "<value>": value})
+    config_cmd = TemplateConfigCommand(
+        {"list": list, "set": set, "remove": remove,
+         "<name>": name, "<value>": value})
 
     with catch_stdout() as caught_output:
         config_cmd.action()
@@ -55,7 +56,7 @@ def test_uninitialized_config_call():
     """
     with catch_stdout() as caught_output:
         with pytest.raises(SystemExit):
-            ConfigCommand({})
+            TemplateConfigCommand({})
         output = caught_output.getvalue()
         expected_error = "This command requires you to be in an `mlt init` " \
                          "built directory"

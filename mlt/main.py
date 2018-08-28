@@ -26,7 +26,7 @@ Usage:
   mlt init [--template=<template> --template-repo=<repo>]
       [--registry=<registry> --namespace=<namespace>]
       [--skip-crd-check] [--enable-sync] <name>
-  mlt config (list | set <name> <value> | remove <name>)
+  mlt template_config (list | set <name> <value> | remove <name>)
   mlt build [--watch] [-v | --verbose]
   mlt deploy [--no-push] [-i | --interactive] [-l | --logs]
       [--retries=<retries>] [--skip-crd-check]
@@ -98,10 +98,11 @@ Options:
 
 # Note that new commands/flags should be documented in docs/features.md
 
+import os
 from docopt import docopt
 
 import mlt
-from mlt.commands import (BuildCommand, ConfigCommand, DeployCommand,
+from mlt.commands import (BuildCommand, TemplateConfigCommand, DeployCommand,
                           EventsCommand, InitCommand, LogsCommand,
                           StatusCommand, SyncCommand, TemplatesCommand,
                           UndeployCommand, UpdateTemplateCommand)
@@ -111,7 +112,7 @@ from mlt.utils import regex_checks
 # every available command and its corresponding action will go here
 COMMAND_MAP = (
     ('build', BuildCommand),
-    ('config', ConfigCommand),
+    ('template_config', TemplateConfigCommand),
     ('deploy', DeployCommand),
     ('init', InitCommand),
     ('status', StatusCommand),
@@ -142,6 +143,8 @@ def sanitize_input(args, regex=None):
        TODO: this can definitely be smarter...see if docopt can do some of it
        This could also be leveraged: https://github.com/keleshev/schema
        It is recommended on docopt github to do validation
+
+       Also sources dev config from either `mlt.conf` or conf file provided
     """
     # docker requires repo name to be in lowercase
     if args["<name>"] and args.get("init"):
@@ -186,8 +189,24 @@ def sanitize_input(args, regex=None):
     return args
 
 
+def load_config(args):
+    """Loads env vars to be used as defaults for various flags
+       See features.md for format required
+    """
+    for env_var, val in os.environ.items():
+        if env_var.startswith('MLT'):
+            env_var = env_var.lower().replace('_', '-')[4:]
+            # don't override what a user sets on command line
+            if not args.get(env_var):
+                # convert to bool if possible
+                if val.lower() in ('true', 'false'):
+                    val = val.lower() == 'true'
+                args[env_var] = val
+    return args
+
+
 def main():
-    args = sanitize_input(
+    args = load_config(sanitize_input(
         docopt(__doc__, version="ML Container Templates Version {}".
-               format(mlt.__version__)))
+               format(mlt.__version__))))
     run_command(args)

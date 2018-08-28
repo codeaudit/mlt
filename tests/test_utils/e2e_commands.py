@@ -160,7 +160,7 @@ class CommandTester(object):
             self._setup_experiments_sa()
 
     def config(self, subcommand="list", config_name=None, config_value=None):
-        command = ['mlt', 'config', subcommand]
+        command = ['mlt', 'template_config', subcommand]
 
         if config_name:
             command.append(config_name)

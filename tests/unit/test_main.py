@@ -18,6 +18,7 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
+import os
 import pytest
 from mock import MagicMock, patch
 
@@ -27,6 +28,16 @@ from mlt.main import main, run_command
 All these tests assert that given a command arg from docopt we call
 the right command
 """
+
+
+@pytest.fixture
+def docopt_mock(patch):
+    return patch('docopt')
+
+
+@pytest.fixture
+def run_command_mock(patch):
+    return patch('run_command')
 
 
 @pytest.mark.parametrize('command',
@@ -46,20 +57,17 @@ def test_run_command(command):
     {'-i': True, '-l': False, '-v': False, '<name>': 'foo', '--retries': '5'},
     {'-i': True, '-l': False, '-v': False, '<name>': 'foo', '--retries': '8'},
     {'-i': True, '-l': False, '-v': True, '<name>': 'foo', '--retries': '8'}])
-@patch('mlt.main.docopt')
-@patch('mlt.main.run_command')
-def test_main_various_args(run_command, docopt, args):
-    docopt.return_value = args
+def test_main_various_args(run_command_mock, docopt_mock, args):
+    docopt_mock.return_value = args
     # add common args and expected arg manipulations
     args['--namespace'] = 'foo'
     args['--retries'] = int(args['--retries'])
     args['--interactive'] = True
     args['<name>'] = args['<name>']
     main()
-    run_command.assert_called_with(args)
+    run_command_mock.assert_called_with(args)
 
 
-@patch('mlt.main.docopt')
 def test_main_invalid_names(docopt_mock):
     """ Test that an invalid name throws a ValueError """
     args = {
@@ -70,10 +78,8 @@ def test_main_invalid_names(docopt_mock):
     docopt_mock.return_value = args
     with pytest.raises(ValueError):
         main()
-        run_command(args)
 
 
-@patch('mlt.main.docopt')
 def test_main_invalid_namespace(docopt_mock):
     """ Test that an invalid namespace throws a ValueError """
     args = {
@@ -88,14 +94,12 @@ def test_main_invalid_namespace(docopt_mock):
     docopt_mock.return_value = args
     with pytest.raises(ValueError):
         main()
-        run_command(args)
 
 
 @pytest.mark.parametrize("command", [
     "set",
     "remove"
 ])
-@patch('mlt.main.docopt')
 def test_main_set_remove_name(docopt_mock, command):
     """ Ensure that set and unset commands require name arg."""
     args = {
@@ -110,4 +114,23 @@ def test_main_set_remove_name(docopt_mock, command):
     docopt_mock.return_value = args
     with pytest.raises(ValueError):
         main()
-        run_command(args)
+
+
+def test_main_load_args(docopt_mock, run_command_mock):
+    """Set env var and verify that it's loaded in the args"""
+    args = {
+        "--namespace": "foo",
+        "<name>": "bar",
+        "-i": False,
+        "-l": False,
+        "-v": False,
+        "--retries": 5,
+        "status": True
+    }
+    docopt_mock.return_value = args
+    os.environ["MLT_REGISTRY"] = "gcr.io/foobar"
+    os.environ["MLT_SKIP_CRD_CHECK"] = "True"
+    main()
+    # can't check `.items() <= .items()` here because of python2
+    assert args["registry"] == "gcr.io/foobar", args["registry"]
+    assert args["skip-crd-check"] is True, args["skip-crd-check"]

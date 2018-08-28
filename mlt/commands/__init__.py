@@ -20,7 +20,7 @@
 
 from mlt.commands.base import Command  # noqa
 from mlt.commands.build import BuildCommand  # noqa
-from mlt.commands.config import ConfigCommand  # noqa
+from mlt.commands.config import TemplateConfigCommand  # noqa
 from mlt.commands.deploy import DeployCommand  # noqa
 from mlt.commands.init import InitCommand  # noqa
 from mlt.commands.status import StatusCommand  # noqa
@@ -28,5 +28,5 @@ from mlt.commands.sync import SyncCommand  # noqa
 from mlt.commands.templates import TemplatesCommand  # noqa
 from mlt.commands.update_template import UpdateTemplateCommand  # noqa
 from mlt.commands.undeploy import UndeployCommand  # noqa
-from mlt.commands.logs import LogsCommand # noqa
+from mlt.commands.logs import LogsCommand  # noqa
 from mlt.commands.events import EventsCommand  # noqa

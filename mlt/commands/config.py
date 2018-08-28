@@ -25,9 +25,9 @@ from mlt.commands import Command
 from mlt.utils import config_helpers, constants
 
 
-class ConfigCommand(Command):
+class TemplateConfigCommand(Command):
     def __init__(self, args):
-        super(ConfigCommand, self).__init__(args)
+        super(TemplateConfigCommand, self).__init__(args)
         self.config = config_helpers.load_config()
         self.param_keys = args.get('<name>').split('.') \
             if args.get('<name>') else []
@@ -101,7 +101,7 @@ class ConfigCommand(Command):
         then an error is displayed.
         """
         key_not_found = "Unable to find config '{}'. To see " \
-                        "list of configs, use `mlt config list`.". \
+                        "list of configs, use `mlt template_config list`.". \
             format(self.args.get('<name>'))
 
         # Find the specified config, and display an error if it does not exist.
