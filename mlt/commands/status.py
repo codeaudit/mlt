@@ -61,8 +61,8 @@ class StatusCommand(Command):
         """
         status_options = {
             "job": self._generic_status,
-            "tfjob": self._tfjob_status,
-            "pytorchjob": self._pytorchjob_status,
+            "tfjob": self._crd_status,
+            "pytorchjob": self._crd_status,
             # experiments have yaml templates but also a bash script to call
             "experiment": self._custom_status
         }
@@ -77,12 +77,13 @@ class StatusCommand(Command):
             job_types = job_types.pop()
 
         try:
-            status_options.get(job_types, self._custom_status)(job, namespace)
+            status_options.get(job_types, self._custom_status)(
+                job, namespace, job_types)
         except subprocess.CalledProcessError as e:
             print("Error while getting app status: {}".format(e.output))
             sys.exit(1)
 
-    def _custom_status(self, job, namespace):
+    def _custom_status(self, job, namespace, job_type):
         """runs `make status` on any special deployment
            Special deployment is defined as any one of the following:
                 1. Doesn't have deployment yaml
@@ -107,7 +108,7 @@ class StatusCommand(Command):
                 print("This app does not support the `mlt status` command. "
                       "No `status` target was found in the Makefile.")
 
-    def _generic_status(self, job, namespace):
+    def _generic_status(self, job, namespace, job_type):
         """displays simple pod information"""
         status = process_helpers.run_popen(
             ["kubectl", "get", "pods", "--namespace", namespace,
@@ -115,10 +116,25 @@ class StatusCommand(Command):
             stdout=True, stderr=True)
         status.wait()
 
-    def _tfjob_status(self, job, namespace):
-        """displays status for a TFJob deployment"""
-        print('tfjob')
+    def _crd_status(self, job, namespace, job_type):
+        """Handles statuses for various crd deployments
+           CRDs handled:
+                1. TFJob
+                2. PyTorchJob
+        """
+        label = 'tf_job_name' if job_type == 'tfjob' else 'pytorch_job_name'
 
-    def _pytorchjob_status(self, job, namespace):
-        """displays status for a PyTorchJob deployment"""
-        print('pytorch')
+        print("CRD: {}".format(job_type.upper()))
+        status = process_helpers.run_popen(
+            ["kubectl", "get", job_type, job, "--namespace", namespace])
+        out, err = status.communicate()
+        if status.wait() != 0:
+            print("The job may have been undeployed.")
+        else:
+            print(out.decode('utf-8'))
+
+        print("Pods: ")
+        status = process_helpers.run_popen(
+            ["kubectl", "get", "pods", "--namespace", namespace, "-o", "wide",
+             "-a", "-l", "{}={}".format(label, job)], stdout=True, stderr=True)
+        status.communicate()
